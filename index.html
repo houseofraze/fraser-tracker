@@ -733,7 +733,7 @@
 //   1. Bump APP_VERSION here
 //   2. Bump CACHE_VERSION in service-worker.js to match
 //   3. mv fraser-final-complete.html index.html; git commit; git push
-const APP_VERSION = '2026.05.19.70';
+const APP_VERSION = '2026.05.19.74';
 
 let activeTab = 'today';
 let activeDay = 0; // will be set to today on init
@@ -20971,12 +20971,149 @@ const INGREDIENT_DATABASE = {
     per100g: { kcal: 110, protein: 3.5,  carbs: 12.0, fat: 5.5, fiber: 5.0 },
     density: null, commonUnit: 'g', aisle: 'Pantry & Condiments'
   },
+  // ─── MARINADE COMPONENTS (for build-your-own marinade recipes) ───────────
+  'lemon-juice': {
+    usdaId: 167747, name: 'Lemon juice, fresh',
+    per100g: { kcal: 22, protein: 0.4, carbs: 6.9, fat: 0.2, fiber: 0.3 },
+    density: null, commonUnit: 'g', aisle: 'Fruits & Vegetables'
+  },
+  'lime-juice': {
+    usdaId: 168155, name: 'Lime juice, fresh',
+    per100g: { kcal: 25, protein: 0.4, carbs: 8.4, fat: 0.1, fiber: 0.4 },
+    density: null, commonUnit: 'g', aisle: 'Fruits & Vegetables'
+  },
+  'chilli-flakes-dried': {
+    usdaId: null, name: 'Chilli flakes, dried',
+    per100g: { kcal: 282, protein: 12.0, carbs: 50.0, fat: 14.0, fiber: 27.0 },
+    density: null, commonUnit: 'g', aisle: 'Pantry & Condiments'
+  },
+  'dill-fresh': {
+    usdaId: 170922, name: 'Dill, fresh',
+    per100g: { kcal: 43, protein: 3.5, carbs: 7.0, fat: 1.1, fiber: 2.1 },
+    density: null, commonUnit: 'g', aisle: 'Fruits & Vegetables'
+  },
+
   'thai-chili-basil-marinade': {
     // Composite homemade blend (fish sauce, soy, a little honey, lime, chilli,
     // garlic, Thai basil). Macros are an honest estimate of a homemade sauce,
     // not a verified commercial product. Lean and umami-forward.
     usdaId: null, name: 'Thai chilli basil marinade',
     per100g: { kcal: 90, protein: 3.5, carbs: 17.0, fat: 1.0, fiber: 1.0 },
+    density: null, commonUnit: 'g', aisle: 'Pantry & Condiments'
+  },
+
+  // ─── EXPANDED PROTEIN VARIANTS (researched USDA raw, per 100g) ────────────
+  'chicken-tenderloin-raw': {
+    usdaId: null, name: 'Chicken tenderloin, raw',
+    per100g: { kcal: 110, protein: 23.0, carbs: 0, fat: 1.5, fiber: 0 },
+    density: null, commonUnit: 'g', aisle: 'Proteins'
+  },
+  'beef-steak-lean-raw': {
+    usdaId: null, name: 'Beef sirloin steak, lean, raw',
+    per100g: { kcal: 130, protein: 22.0, carbs: 0, fat: 4.0, fiber: 0 },
+    density: null, commonUnit: 'g', aisle: 'Proteins'
+  },
+  'lamb-leg-steak-raw': {
+    usdaId: null, name: 'Lamb leg steak, lean, raw',
+    per100g: { kcal: 150, protein: 20.0, carbs: 0, fat: 7.0, fiber: 0 },
+    density: null, commonUnit: 'g', aisle: 'Proteins'
+  },
+  'pork-tenderloin-raw': {
+    usdaId: 168249, name: 'Pork tenderloin, lean, raw',
+    per100g: { kcal: 109, protein: 21.0, carbs: 0, fat: 2.2, fiber: 0 },
+    density: null, commonUnit: 'g', aisle: 'Proteins'
+  },
+  'pork-loin-steak-raw': {
+    usdaId: 168230, name: 'Pork loin steak, lean, raw',
+    per100g: { kcal: 143, protein: 21.4, carbs: 0, fat: 6.0, fiber: 0 },
+    density: null, commonUnit: 'g', aisle: 'Proteins'
+  },
+  'pork-mince-lean-raw': {
+    // Estimate for lean (approx 5-10% fat) pork mince; commodity pork mince
+    // runs fattier (about 221 kcal). Flagged approximate.
+    usdaId: null, name: 'Pork mince, lean, raw',
+    per100g: { kcal: 150, protein: 19.0, carbs: 0, fat: 8.0, fiber: 0 },
+    density: null, commonUnit: 'g', aisle: 'Proteins'
+  },
+  'turkey-breast-raw': {
+    usdaId: null, name: 'Turkey breast, raw',
+    per100g: { kcal: 105, protein: 24.4, carbs: 0, fat: 0.8, fiber: 0 },
+    density: null, commonUnit: 'g', aisle: 'Proteins'
+  },
+  'tuna-steak-raw': {
+    usdaId: null, name: 'Tuna steak, fresh, raw',
+    per100g: { kcal: 108, protein: 23.0, carbs: 0, fat: 1.0, fiber: 0 },
+    density: null, commonUnit: 'g', aisle: 'Proteins'
+  },
+
+  // ─── EXPANDED CARB VARIANTS (researched, per 100g dry/raw) ────────────────
+  'white-rice-raw': {
+    usdaId: null, name: 'White long-grain rice, raw',
+    per100g: { kcal: 360, protein: 7.0, carbs: 79.0, fat: 0.6, fiber: 1.3 },
+    density: null, commonUnit: 'g', aisle: 'Grains & Carbs'
+  },
+  'jasmine-rice-raw': {
+    usdaId: null, name: 'Jasmine rice, white, raw',
+    per100g: { kcal: 360, protein: 7.0, carbs: 79.0, fat: 0.6, fiber: 1.0 },
+    density: null, commonUnit: 'g', aisle: 'Grains & Carbs'
+  },
+  'pasta-gluten-free-dry': {
+    // Estimate for corn/rice-based gluten-free pasta (lower protein than durum).
+    usdaId: null, name: 'Gluten-free pasta, dry',
+    per100g: { kcal: 357, protein: 7.0, carbs: 79.0, fat: 1.2, fiber: 2.0 },
+    density: null, commonUnit: 'g', aisle: 'Grains & Carbs'
+  },
+  'chickpeas-dry': {
+    usdaId: 173756, name: 'Chickpeas, dry, raw',
+    per100g: { kcal: 364, protein: 19.0, carbs: 61.0, fat: 6.0, fiber: 17.0 },
+    density: null, commonUnit: 'g', aisle: 'Grains & Carbs'
+  },
+
+  // ─── SIGNATURE SAUCES (per 100g; composites flagged as estimates) ─────────
+  'salt-pepper': {
+    usdaId: null, name: 'Salt & pepper',
+    per100g: { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
+    density: null, commonUnit: 'g', aisle: 'Pantry & Condiments'
+  },
+  'chinese-salt-pepper': {
+    // Estimate: seasoning tossed with a little oil (the calories are the oil).
+    usdaId: null, name: 'Chinese salt & pepper seasoning',
+    per100g: { kcal: 45, protein: 1.0, carbs: 3.0, fat: 4.0, fiber: 0 },
+    density: null, commonUnit: 'g', aisle: 'Pantry & Condiments'
+  },
+  'tomato-pasta-sauce': {
+    usdaId: null, name: 'Tomato pasta sauce (marinara)',
+    per100g: { kcal: 55, protein: 1.6, carbs: 9.0, fat: 1.5, fiber: 1.8 },
+    density: null, commonUnit: 'g', aisle: 'Pantry & Condiments'
+  },
+  'souvlaki-marinade': {
+    // Estimate: lemon, oregano, garlic, olive oil marinade (oil-driven).
+    usdaId: null, name: 'Souvlaki marinade',
+    per100g: { kcal: 120, protein: 0.5, carbs: 2.0, fat: 12.0, fiber: 0 },
+    density: null, commonUnit: 'g', aisle: 'Pantry & Condiments'
+  },
+  'gravy-light': {
+    usdaId: null, name: 'Gravy, light',
+    per100g: { kcal: 40, protein: 1.5, carbs: 5.0, fat: 1.5, fiber: 0 },
+    density: null, commonUnit: 'g', aisle: 'Pantry & Condiments'
+  },
+  'sweet-sour-sauce': {
+    // Estimate: sugar-forward, brand-variable.
+    usdaId: null, name: 'Sweet & sour sauce',
+    per100g: { kcal: 130, protein: 0.5, carbs: 32.0, fat: 0.1, fiber: 0.2 },
+    density: null, commonUnit: 'g', aisle: 'Pantry & Condiments'
+  },
+  'honey-mustard': {
+    // Estimate: honey + mustard + a little oil, brand-variable.
+    usdaId: null, name: 'Honey mustard',
+    per100g: { kcal: 150, protein: 1.5, carbs: 20.0, fat: 7.0, fiber: 0.5 },
+    density: null, commonUnit: 'g', aisle: 'Pantry & Condiments'
+  },
+  'tzatziki': {
+    // Estimate for a healthy Greek-yogurt-based tzatziki (leaner than full-fat
+    // deli versions, which run to about 190 kcal). Brand-variable.
+    usdaId: null, name: 'Tzatziki (Greek yogurt)',
+    per100g: { kcal: 90, protein: 5.0, carbs: 4.0, fat: 5.0, fiber: 0.2 },
     density: null, commonUnit: 'g', aisle: 'Pantry & Condiments'
   },
   'curry-powder': {
@@ -30333,43 +30470,370 @@ function openProteinSwapSheet(mealIndex, meal) {
 // are never hardcoded. Portions are tuned for a high-protein cut. These option
 // menus are data: any id or gram amount can be changed in one line.
 
-// Protein options (raw weight). Portions target roughly 35 to 45 g protein.
-const PLATE_PROTEINS = [
-  { id: 'chicken-breast-raw',    grams: 180, label: 'Chicken breast' },
-  { id: 'beef-mince-lean-raw',   grams: 170, label: 'Beef mince' },
-  { id: 'turkey-mince-lean',     grams: 180, label: 'Turkey mince' },
-  { id: 'chicken-mince-lean-raw',grams: 180, label: 'Chicken mince' },
-  { id: 'lamb-mince-lean-raw',   grams: 150, label: 'Lamb mince' },
-  { id: 'cod-raw',               grams: 200, label: 'Cod fillet' },
-  { id: 'prawns-raw',            grams: 180, label: 'Prawns' },
-  { id: 'tofu-firm',             grams: 200, label: 'Firm tofu' }
+// Protein options as categories (level 1) each with variants (level 2). Every
+// variant is a real INGREDIENT_DATABASE id with a raw-weight gram portion tuned
+// for a high-protein cut. The flat PLATE_PROTEINS list is derived so all engine
+// lookups (id to grams, macros) keep working unchanged.
+const PLATE_PROTEIN_CATEGORIES = [
+  { category: 'Chicken', variants: [
+    { id: 'chicken-breast-raw',     grams: 180, label: 'Breast' },
+    { id: 'chicken-thigh-raw',      grams: 170, label: 'Thigh' },
+    { id: 'chicken-tenderloin-raw', grams: 180, label: 'Tenderloin' }
+  ]},
+  { category: 'Beef', variants: [
+    { id: 'beef-steak-lean-raw',    grams: 170, label: 'Steak (sirloin)' },
+    { id: 'beef-mince-lean-raw',    grams: 170, label: 'Mince' }
+  ]},
+  { category: 'Lamb', variants: [
+    { id: 'lamb-leg-steak-raw',     grams: 160, label: 'Leg steak' },
+    { id: 'lamb-mince-lean-raw',    grams: 150, label: 'Mince' }
+  ]},
+  { category: 'Pork', variants: [
+    { id: 'pork-tenderloin-raw',    grams: 180, label: 'Tenderloin' },
+    { id: 'pork-loin-steak-raw',    grams: 170, label: 'Loin steak' },
+    { id: 'pork-mince-lean-raw',    grams: 170, label: 'Mince' }
+  ]},
+  { category: 'Turkey', variants: [
+    { id: 'turkey-breast-raw',      grams: 180, label: 'Breast' },
+    { id: 'turkey-mince-lean',      grams: 180, label: 'Mince' }
+  ]},
+  { category: 'Fish & Seafood', variants: [
+    { id: 'cod-raw',                grams: 200, label: 'Cod' },
+    { id: 'salmon-atlantic-raw',    grams: 150, label: 'Salmon' },
+    { id: 'tuna-steak-raw',         grams: 180, label: 'Tuna steak' },
+    { id: 'prawns-raw',             grams: 180, label: 'Prawns' }
+  ]},
+  { category: 'Plant', variants: [
+    { id: 'tofu-firm',              grams: 200, label: 'Firm tofu' },
+    { id: 'tempeh',                 grams: 150, label: 'Tempeh' }
+  ]}
 ];
 
-// Carb options (dry or raw weight). Portions target roughly 50 g carbs.
-const PLATE_CARBS = [
-  { id: 'basmati-rice-raw',     grams: 65,  label: 'Basmati rice' },
-  { id: 'brown-rice-raw',       grams: 65,  label: 'Brown rice' },
-  { id: 'sweet-potato-raw',     grams: 250, label: 'Sweet potato' },
-  { id: 'potato-white-raw',     grams: 280, label: 'White potato' },
-  { id: 'quinoa-raw',           grams: 70,  label: 'Quinoa' },
-  { id: 'wholewheat-pasta-dry', grams: 70,  label: 'Wholewheat pasta' },
-  { id: 'couscous-dry',         grams: 65,  label: 'Couscous' }
+// Carb options as categories with variants (dry/raw weight, ~50g carbs).
+const PLATE_CARB_CATEGORIES = [
+  { category: 'Rice', variants: [
+    { id: 'white-rice-raw',       grams: 65, label: 'White' },
+    { id: 'basmati-rice-raw',     grams: 65, label: 'Basmati' },
+    { id: 'brown-rice-raw',       grams: 65, label: 'Brown' },
+    { id: 'jasmine-rice-raw',     grams: 65, label: 'Jasmine' },
+    { id: 'arborio-rice-raw',     grams: 65, label: 'Arborio' }
+  ]},
+  { category: 'Pasta', variants: [
+    { id: 'pasta-spaghetti-dry',  grams: 70, label: 'Regular' },
+    { id: 'wholewheat-pasta-dry', grams: 70, label: 'Wholemeal' },
+    { id: 'pasta-gluten-free-dry',grams: 70, label: 'Gluten-free' }
+  ]},
+  { category: 'Potato', variants: [
+    { id: 'sweet-potato-raw',     grams: 250, label: 'Sweet potato' },
+    { id: 'potato-white-raw',     grams: 280, label: 'White potato' }
+  ]},
+  { category: 'Pulses & Grains', variants: [
+    { id: 'quinoa-raw',           grams: 70, label: 'Quinoa' },
+    { id: 'lentils-dry',          grams: 65, label: 'Lentils' },
+    { id: 'chickpeas-dry',        grams: 65, label: 'Chickpeas' },
+    { id: 'couscous-dry',         grams: 65, label: 'Couscous' }
+  ]}
 ];
 
-// Marinade options (macro-affecting). 'none' contributes nothing (salt and
-// pepper only). Portions are a realistic single-serve amount.
+// Derived flat lists so the engine's id-to-option lookups keep working.
+const PLATE_PROTEINS = PLATE_PROTEIN_CATEGORIES.reduce(function (a, c) { return a.concat(c.variants); }, []);
+const PLATE_CARBS = PLATE_CARB_CATEGORIES.reduce(function (a, c) { return a.concat(c.variants); }, []);
+
+// Marinades stay a single flat list (the signature sauces for lunches and
+// dinners). Composite estimates are flagged on their INGREDIENT_DATABASE entry.
 const PLATE_MARINADES = [
-  { id: 'none',            grams: 0,  label: 'Plain (salt & pepper)' },
-  { id: 'soy-sauce',       grams: 25, label: 'Soy' },
-  { id: 'hoisin-sauce',    grams: 25, label: 'Hoisin' },
-  { id: 'bbq-sauce-light', grams: 30, label: 'BBQ (light)' },
-  { id: 'harissa-paste',   grams: 20, label: 'Harissa' },
-  { id: 'pesto-basil',     grams: 20, label: 'Pesto' },
-  { id: 'chipotle-adobo',  grams: 25, label: 'Chipotle' },
-  { id: 'gochujang',       grams: 20, label: 'Gochujang' },
+  { id: 'none',               grams: 0,  label: 'Plain (salt & pepper)' },
+  { id: 'chinese-salt-pepper',grams: 20, label: 'Chinese salt & pepper' },
+  { id: 'soy-sauce',          grams: 25, label: 'Soy' },
+  { id: 'hoisin-sauce',       grams: 25, label: 'Hoisin' },
+  { id: 'bbq-sauce-light',    grams: 30, label: 'BBQ (light)' },
+  { id: 'harissa-paste',      grams: 20, label: 'Harissa' },
+  { id: 'pesto-basil',        grams: 20, label: 'Pesto' },
+  { id: 'tomato-pasta-sauce', grams: 60, label: 'Tomato (pasta)' },
+  { id: 'chipotle-adobo',     grams: 25, label: 'Chipotle' },
+  { id: 'gochujang',          grams: 20, label: 'Gochujang' },
   { id: 'thai-chili-basil-marinade', grams: 25, label: 'Thai chilli basil' },
-  { id: 'honey',           grams: 15, label: 'Honey glaze' }
+  { id: 'souvlaki-marinade',  grams: 25, label: 'Souvlaki' },
+  { id: 'sweet-sour-sauce',   grams: 30, label: 'Sweet & sour' },
+  { id: 'honey-mustard',      grams: 20, label: 'Honey mustard' },
+  { id: 'tzatziki',           grams: 40, label: 'Tzatziki' },
+  { id: 'gravy-light',        grams: 40, label: 'Gravy' },
+  { id: 'honey',              grams: 15, label: 'Honey glaze' }
+]
+
+// ─── CUSTOM MARINADES (build your own) ──────────────────────────────────────
+// User-created marinades stored locally, mirroring the custom exercise pattern.
+// A custom marinade has the same shape as a signature one (components with
+// per-serve grams plus a method), so it flows through the same macro, ingredient
+// row, and instruction code with no special cases.
+const CUSTOM_MARINADES_KEY = 'flow.marinades.custom';
+
+// The component palette offered in the builder. Curated rather than the whole
+// ingredient database, so the picker stays usable on a phone. Every id must
+// exist in INGREDIENT_DATABASE.
+const MARINADE_COMPONENT_IDS = [
+  'olive-oil', 'sesame-oil', 'soy-sauce', 'fish-sauce', 'honey', 'garlic-raw',
+  'ginger-raw', 'lemon-juice', 'lime-juice', 'rice-vinegar', 'balsamic-vinegar',
+  'dijon-mustard', 'harissa-paste', 'gochujang', 'hoisin-sauce', 'chipotle-adobo',
+  'bbq-sauce-light', 'pesto-basil', 'tomato-pasta-sauce', 'chili-bean-sauce',
+  'greek-yogurt-nonfat', 'cucumber-raw', 'basil-fresh', 'dill-fresh',
+  'oregano-dried', 'cumin-ground', 'paprika-smoked', 'ancho-chili-powder',
+  'chilli-flakes-dried', 'spring-onion-raw', 'onion-raw', 'lemongrass-fresh',
+  'cornflour-cornstarch'
 ];
+
+function getCustomMarinades() {
+  try {
+    const raw = localStorage.getItem(CUSTOM_MARINADES_KEY);
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list : [];
+  } catch (e) { return []; }
+}
+
+function saveCustomMarinade(marinade) {
+  const all = getCustomMarinades();
+  if (marinade.id) {
+    // Editing an existing one.
+    for (let i = 0; i < all.length; i++) {
+      if (all[i].id === marinade.id) { all[i] = marinade; break; }
+    }
+  } else {
+    marinade.id = 'marinade_custom_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    marinade.isCustom = true;
+    all.push(marinade);
+  }
+  try { localStorage.setItem(CUSTOM_MARINADES_KEY, JSON.stringify(all)); } catch (e) {}
+  return marinade;
+}
+
+function deleteCustomMarinade(id) {
+  const all = getCustomMarinades().filter(function (m) { return m.id !== id; });
+  try { localStorage.setItem(CUSTOM_MARINADES_KEY, JSON.stringify(all)); } catch (e) {}
+}
+
+function isCustomMarinadeId(id) {
+  return typeof id === 'string' && id.indexOf('marinade_custom_') === 0;
+}
+
+// The full marinade menu: signature options plus the user's own.
+function getMarinadeMenu() {
+  const custom = getCustomMarinades().map(function (m) {
+    return { id: m.id, grams: 0, label: m.name || 'My marinade', isCustom: true };
+  });
+  return PLATE_MARINADES.concat(custom);
+}
+
+// Resolve a marinade's recipe: signature table first, then the user's own.
+function marinadeRecipeFor(id) {
+  if (MARINADE_RECIPES[id]) return MARINADE_RECIPES[id];
+  const custom = getCustomMarinades();
+  for (let i = 0; i < custom.length; i++) if (custom[i].id === id) return custom[i];
+  return null;
+}
+
+// ─── MARINADE RECIPES ───────────────────────────────────────────────────────
+// Each signature marinade is a real blend you make yourself: component
+// ingredients with per-serve gram amounts, plus a short method. Macros are
+// computed by summing the components (never a flat estimate), so the numbers
+// are verifiable from the ingredient data rather than guessed at the sauce
+// level. Amounts are for one plate. A marinade with no recipe here falls back
+// to its single INGREDIENT_DATABASE entry.
+const MARINADE_RECIPES = {
+  'chinese-salt-pepper': {
+    components: [
+      { ingredientId: 'sesame-oil', grams: 4 },
+      { ingredientId: 'spring-onion-raw', grams: 12 },
+      { ingredientId: 'garlic-raw', grams: 4 },
+      { ingredientId: 'chilli-flakes-dried', grams: 1 }
+    ],
+    method: 'Toast a good pinch of salt and white pepper in a dry pan, then stir through the sesame oil, garlic, chilli flakes, and spring onion.'
+  },
+  'soy-sauce': {
+    components: [
+      { ingredientId: 'soy-sauce', grams: 20 },
+      { ingredientId: 'garlic-raw', grams: 4 },
+      { ingredientId: 'ginger-raw', grams: 4 },
+      { ingredientId: 'sesame-oil', grams: 3 },
+      { ingredientId: 'honey', grams: 5 }
+    ],
+    method: 'Whisk the soy, honey, and sesame oil together, then grate in the garlic and ginger.'
+  },
+  'hoisin-sauce': {
+    components: [
+      { ingredientId: 'hoisin-sauce', grams: 20 },
+      { ingredientId: 'soy-sauce', grams: 5 },
+      { ingredientId: 'garlic-raw', grams: 3 },
+      { ingredientId: 'sesame-oil', grams: 2 }
+    ],
+    method: 'Loosen the hoisin with the soy, then stir in the sesame oil and grated garlic.'
+  },
+  'bbq-sauce-light': {
+    components: [
+      { ingredientId: 'bbq-sauce-light', grams: 25 },
+      { ingredientId: 'paprika-smoked', grams: 1 },
+      { ingredientId: 'garlic-raw', grams: 3 }
+    ],
+    method: 'Stir the smoked paprika and grated garlic through the barbecue sauce.'
+  },
+  'harissa-paste': {
+    components: [
+      { ingredientId: 'harissa-paste', grams: 18 },
+      { ingredientId: 'olive-oil', grams: 4 },
+      { ingredientId: 'lemon-juice', grams: 8 },
+      { ingredientId: 'garlic-raw', grams: 3 },
+      { ingredientId: 'cumin-ground', grams: 1 }
+    ],
+    method: 'Loosen the harissa with the olive oil and lemon juice, then stir in the garlic and cumin.'
+  },
+  'pesto-basil': {
+    components: [
+      { ingredientId: 'pesto-basil', grams: 18 },
+      { ingredientId: 'lemon-juice', grams: 5 },
+      { ingredientId: 'garlic-raw', grams: 2 }
+    ],
+    method: 'Slacken the pesto with the lemon juice and add the grated garlic.'
+  },
+  'tomato-pasta-sauce': {
+    components: [
+      { ingredientId: 'tomato-pasta-sauce', grams: 55 },
+      { ingredientId: 'garlic-raw', grams: 4 },
+      { ingredientId: 'basil-fresh', grams: 4 },
+      { ingredientId: 'olive-oil', grams: 3 }
+    ],
+    method: 'Warm the garlic in the olive oil, add the tomato sauce, simmer briefly, then tear in the basil.'
+  },
+  'chipotle-adobo': {
+    components: [
+      { ingredientId: 'chipotle-adobo', grams: 20 },
+      { ingredientId: 'lime-juice', grams: 8 },
+      { ingredientId: 'garlic-raw', grams: 3 },
+      { ingredientId: 'cumin-ground', grams: 1 },
+      { ingredientId: 'olive-oil', grams: 3 }
+    ],
+    method: 'Blend the chipotle with the lime juice, olive oil, garlic, and cumin into a loose paste.'
+  },
+  'gochujang': {
+    components: [
+      { ingredientId: 'gochujang', grams: 18 },
+      { ingredientId: 'soy-sauce', grams: 6 },
+      { ingredientId: 'rice-vinegar', grams: 5 },
+      { ingredientId: 'honey', grams: 5 },
+      { ingredientId: 'garlic-raw', grams: 4 },
+      { ingredientId: 'sesame-oil', grams: 3 }
+    ],
+    method: 'Whisk the gochujang with the soy, rice vinegar, and honey until smooth, then stir in the garlic and sesame oil.'
+  },
+  'thai-chili-basil-marinade': {
+    components: [
+      { ingredientId: 'fish-sauce', grams: 10 },
+      { ingredientId: 'soy-sauce', grams: 6 },
+      { ingredientId: 'lime-juice', grams: 8 },
+      { ingredientId: 'honey', grams: 5 },
+      { ingredientId: 'garlic-raw', grams: 4 },
+      { ingredientId: 'chilli-flakes-dried', grams: 1 },
+      { ingredientId: 'basil-fresh', grams: 5 }
+    ],
+    method: 'Dissolve the honey in the fish sauce, soy, and lime juice, then add the garlic and chilli. Tear the basil in at the end so it stays fresh.'
+  },
+  'souvlaki-marinade': {
+    components: [
+      { ingredientId: 'olive-oil', grams: 10 },
+      { ingredientId: 'lemon-juice', grams: 12 },
+      { ingredientId: 'garlic-raw', grams: 4 },
+      { ingredientId: 'oregano-dried', grams: 2 }
+    ],
+    method: 'Whisk the olive oil and lemon juice together, then add the grated garlic, oregano, salt, and pepper.'
+  },
+  'sweet-sour-sauce': {
+    components: [
+      { ingredientId: 'tomato-pasta-sauce', grams: 18 },
+      { ingredientId: 'rice-vinegar', grams: 12 },
+      { ingredientId: 'honey', grams: 12 },
+      { ingredientId: 'soy-sauce', grams: 5 },
+      { ingredientId: 'cornflour-cornstarch', grams: 2 }
+    ],
+    method: 'Simmer the tomato, vinegar, honey, and soy together, then slake the cornflour in a splash of water and stir it through to thicken.'
+  },
+  'honey-mustard': {
+    components: [
+      { ingredientId: 'honey', grams: 12 },
+      { ingredientId: 'dijon-mustard', grams: 12 },
+      { ingredientId: 'lemon-juice', grams: 4 },
+      { ingredientId: 'olive-oil', grams: 4 }
+    ],
+    method: 'Whisk the honey and mustard together, then loosen with the lemon juice and olive oil.'
+  },
+  'tzatziki': {
+    components: [
+      { ingredientId: 'greek-yogurt-nonfat', grams: 45 },
+      { ingredientId: 'cucumber-raw', grams: 25 },
+      { ingredientId: 'lemon-juice', grams: 5 },
+      { ingredientId: 'garlic-raw', grams: 2 },
+      { ingredientId: 'dill-fresh', grams: 2 },
+      { ingredientId: 'olive-oil', grams: 2 }
+    ],
+    method: 'Grate the cucumber and squeeze out the water, then fold it through the yoghurt with the garlic, lemon juice, dill, and olive oil.'
+  },
+  'gravy-light': {
+    components: [
+      { ingredientId: 'onion-raw', grams: 15 },
+      { ingredientId: 'soy-sauce', grams: 5 },
+      { ingredientId: 'cornflour-cornstarch', grams: 4 },
+      { ingredientId: 'olive-oil', grams: 2 }
+    ],
+    method: 'Soften the onion in the oil, add the soy and a cup of stock or water, then thicken with the slaked cornflour.'
+  },
+  'honey': {
+    components: [
+      { ingredientId: 'honey', grams: 12 },
+      { ingredientId: 'soy-sauce', grams: 5 },
+      { ingredientId: 'lemon-juice', grams: 4 },
+      { ingredientId: 'garlic-raw', grams: 2 }
+    ],
+    method: 'Warm the honey with the soy and lemon juice until it loosens, then stir in the garlic.'
+  }
+};
+
+// Total macros for a marinade. Computed from its recipe components when it has
+// one, otherwise from its single ingredient entry at the menu gram amount.
+function marinadeMacros(marinadeId) {
+  var zero = { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 };
+  if (!marinadeId || marinadeId === 'none') return zero;
+  var recipe = marinadeRecipeFor(marinadeId);
+  if (recipe && Array.isArray(recipe.components)) {
+    var t = { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 };
+    recipe.components.forEach(function (c) {
+      var m = _plateComponentMacros(c.ingredientId, c.grams);
+      t.kcal += m.kcal; t.protein += m.protein; t.carbs += m.carbs; t.fat += m.fat; t.fiber += (m.fiber || 0);
+    });
+    return t;
+  }
+  var opt = _plateOption(getMarinadeMenu(), marinadeId);
+  return opt ? _plateComponentMacros(opt.id, opt.grams) : zero;
+}
+
+// Ingredient rows for a marinade, in the card's display shape. A marinade with
+// a recipe lists its components so the user can actually make it.
+function marinadeIngredientRows(marinadeId) {
+  if (!marinadeId || marinadeId === 'none') return [];
+  var recipe = marinadeRecipeFor(marinadeId);
+  function row(id, grams) {
+    var entry = (typeof INGREDIENT_DATABASE !== 'undefined') ? INGREDIENT_DATABASE[id] : null;
+    var nm = entry && entry.name ? entry.name.split(',')[0] : id;
+    return { n: nm, a: grams, u: 'g', m: grams, mu: 'g' };
+  }
+  if (recipe && Array.isArray(recipe.components)) {
+    return recipe.components.map(function (c) { return row(c.ingredientId, c.grams); });
+  }
+  var opt = _plateOption(getMarinadeMenu(), marinadeId);
+  return opt && opt.grams ? [row(opt.id, opt.grams)] : [];
+}
+
+// The method line for a marinade, if it has a recipe.
+function marinadeMethod(marinadeId) {
+  var recipe = marinadeRecipeFor(marinadeId);
+  return (recipe && recipe.method) ? recipe.method : null;
+}
 
 // Fixed veg side, the same on every plate. Contributes real macros.
 const PLATE_VEG = [
@@ -30421,11 +30885,11 @@ function computePlateMacros(selection) {
   var sel = selection || PLATE_DEFAULT;
   var pOpt = _plateOption(PLATE_PROTEINS, sel.proteinId) || PLATE_PROTEINS[0];
   var cOpt = _plateOption(PLATE_CARBS, sel.carbId) || PLATE_CARBS[0];
-  var mOpt = _plateOption(PLATE_MARINADES, sel.marinadeId) || PLATE_MARINADES[0];
+  var mOpt = _plateOption(getMarinadeMenu(), sel.marinadeId) || PLATE_MARINADES[0];
   var parts = [
     _plateComponentMacros(pOpt.id, pOpt.grams),
     _plateComponentMacros(cOpt.id, cOpt.grams),
-    _plateComponentMacros(mOpt.id, mOpt.grams)
+    marinadeMacros(mOpt.id)
   ];
   PLATE_VEG.forEach(function (v) { parts.push(_plateComponentMacros(v.id, v.grams)); });
   var t = { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 };
@@ -30445,10 +30909,11 @@ function _plateIngredientRows(selection) {
   }
   var pOpt = _plateOption(PLATE_PROTEINS, sel.proteinId) || PLATE_PROTEINS[0];
   var cOpt = _plateOption(PLATE_CARBS, sel.carbId) || PLATE_CARBS[0];
-  var mOpt = _plateOption(PLATE_MARINADES, sel.marinadeId) || PLATE_MARINADES[0];
+  var mOpt = _plateOption(getMarinadeMenu(), sel.marinadeId) || PLATE_MARINADES[0];
   push(pOpt.id, pOpt.grams);
   push(cOpt.id, cOpt.grams);
-  push(mOpt.id, mOpt.grams);
+  // A marinade lists its recipe components so the user can make it.
+  marinadeIngredientRows(mOpt.id).forEach(function (r) { rows.push(r); });
   PLATE_VEG.forEach(function (v) { push(v.id, v.grams); });
   return rows;
 }
@@ -30458,17 +30923,22 @@ function _plateInstructions(selection) {
   var sel = selection || PLATE_DEFAULT;
   var pOpt = _plateOption(PLATE_PROTEINS, sel.proteinId) || PLATE_PROTEINS[0];
   var cOpt = _plateOption(PLATE_CARBS, sel.carbId) || PLATE_CARBS[0];
-  var mOpt = _plateOption(PLATE_MARINADES, sel.marinadeId) || PLATE_MARINADES[0];
+  var mOpt = _plateOption(getMarinadeMenu(), sel.marinadeId) || PLATE_MARINADES[0];
+  var pName = plateDisplayName('proteinId', pOpt.id).toLowerCase();
+  var cName = plateDisplayName('carbId', cOpt.id).toLowerCase();
+  var steps = [];
+  // Make the marinade first, from its own recipe, when it has one.
+  var method = marinadeMethod(mOpt.id);
+  if (method) steps.push({ step: 'Make the ' + mOpt.label.toLowerCase() + ': ' + method });
   var marinadeStep = (mOpt.id === 'none')
-    ? 'Season the ' + pOpt.label.toLowerCase() + ' with salt and pepper.'
-    : 'Coat the ' + pOpt.label.toLowerCase() + ' in the ' + mOpt.label.toLowerCase() + ' and leave to marinate for 10 minutes.';
-  return [
-    { step: marinadeStep },
-    { step: 'Cook the ' + pOpt.label.toLowerCase() + ' through: pan-fry, grill, or bake until done.', timer: 0 },
-    { step: 'Prepare the ' + cOpt.label.toLowerCase() + ' per packet or until tender.', timer: 0 },
-    { step: 'Steam or roast the broccoli and pepper until just tender, 5 to 7 minutes.', timer: 0 },
-    { step: 'Plate the protein, carb, and veg together and finish with any remaining marinade.' }
-  ];
+    ? 'Season the ' + pName + ' with salt and pepper.'
+    : 'Coat the ' + pName + ' in the ' + mOpt.label.toLowerCase() + ' and leave to marinate for 10 minutes.';
+  steps.push({ step: marinadeStep });
+  steps.push({ step: 'Cook the ' + pName + ' through: pan-fry, grill, or bake until done.', timer: 0 });
+  steps.push({ step: 'Prepare the ' + cName + ' per packet or until tender.', timer: 0 });
+  steps.push({ step: 'Steam or roast the broccoli and pepper until just tender, 5 to 7 minutes.', timer: 0 });
+  steps.push({ step: 'Plate the protein, carb, and veg together and finish with any remaining marinade.' });
+  return steps;
 }
 
 // Scale a plate to a target kcal so the day's meals add up to the user's
@@ -30483,7 +30953,7 @@ function scalePlateToTarget(meal, targetKcal) {
   var sel = meal._plateSelection;
   var pOpt = _plateOption(PLATE_PROTEINS, sel.proteinId) || PLATE_PROTEINS[0];
   var cOpt = _plateOption(PLATE_CARBS, sel.carbId) || PLATE_CARBS[0];
-  var mOpt = _plateOption(PLATE_MARINADES, sel.marinadeId) || PLATE_MARINADES[0];
+  var mOpt = _plateOption(getMarinadeMenu(), sel.marinadeId) || PLATE_MARINADES[0];
 
   var scales = computeMacroScales(ratio);
   var newPGrams = Math.max(1, Math.round(pOpt.grams * scales.proteinScale));
@@ -30493,7 +30963,7 @@ function scalePlateToTarget(meal, targetKcal) {
   var parts = [
     _plateComponentMacros(pOpt.id, newPGrams),
     _plateComponentMacros(cOpt.id, newCGrams),
-    _plateComponentMacros(mOpt.id, mOpt.grams)
+    marinadeMacros(mOpt.id)
   ];
   PLATE_VEG.forEach(function (v) { parts.push(_plateComponentMacros(v.id, v.grams)); });
   var t = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
@@ -30507,9 +30977,11 @@ function scalePlateToTarget(meal, targetKcal) {
     return { n: nm, a: grams, u: 'g', m: grams, mu: 'g' };
   }
   var rows = [];
-  [[pOpt.id, newPGrams], [cOpt.id, newCGrams], [mOpt.id, mOpt.grams]].forEach(function (pair) {
+  [[pOpt.id, newPGrams], [cOpt.id, newCGrams]].forEach(function (pair) {
     var r = row(pair[0], pair[1]); if (r) rows.push(r);
   });
+  // Marinade stays fixed and lists its recipe components.
+  marinadeIngredientRows(mOpt.id).forEach(function (r) { rows.push(r); });
   PLATE_VEG.forEach(function (v) { var r = row(v.id, v.grams); if (r) rows.push(r); });
 
   return Object.assign({}, meal, {
@@ -30525,14 +30997,35 @@ function isPlateMeal(meal) {
 
 // ── Plate selector UI ──────────────────────────────────────────────────────
 const PLATE_SLOT_META = {
-  proteinId: { label: 'Protein', list: PLATE_PROTEINS },
-  carbId:    { label: 'Carb',    list: PLATE_CARBS },
+  proteinId: { label: 'Protein', list: PLATE_PROTEINS, categories: PLATE_PROTEIN_CATEGORIES },
+  carbId:    { label: 'Carb',    list: PLATE_CARBS,    categories: PLATE_CARB_CATEGORIES },
   marinadeId:{ label: 'Marinade',list: PLATE_MARINADES }
 };
+
+// Find a variant (and its category) by id across a nested category list.
+function _plateFindVariant(categories, id) {
+  for (var i = 0; i < categories.length; i++) {
+    var vs = categories[i].variants;
+    for (var j = 0; j < vs.length; j++) {
+      if (vs[j].id === id) return { variant: vs[j], category: categories[i].category };
+    }
+  }
+  return null;
+}
 
 function plateOptionLabel(slotField, id) {
   var opt = _plateOption(PLATE_SLOT_META[slotField].list, id);
   return opt ? opt.label : id;
+}
+
+// A clear display name for a chosen component: the full ingredient name for
+// protein and carb (so "Breast" reads as "Chicken breast"), and the short
+// marinade label for marinade.
+function plateDisplayName(slotField, id) {
+  if (slotField === 'marinadeId') return plateOptionLabel(slotField, id);
+  var entry = (typeof INGREDIENT_DATABASE !== 'undefined') ? INGREDIENT_DATABASE[id] : null;
+  if (entry && entry.name) return entry.name.split(',')[0];
+  return plateOptionLabel(slotField, id);
 }
 
 function closePlatePickSheet() {
@@ -30544,8 +31037,10 @@ function closePlatePickSheet() {
   setTimeout(function () { sheet.remove(); }, 220);
 }
 
-// A bottom sheet listing the options for one slot, with live macro deltas so
-// the choice is informed. Selecting persists and re-renders the plan.
+// A bottom sheet for choosing a plate component. Protein and carb use a
+// two-level layout: tap a category (Chicken, Rice) to expand its variants, each
+// shown with a live kcal delta. Marinade stays a single flat list. Selecting
+// persists and re-renders the plan.
 function openPlatePickSheet(mealKey, slotField) {
   var meta = PLATE_SLOT_META[slotField];
   if (!meta) return;
@@ -30559,19 +31054,18 @@ function openPlatePickSheet(mealKey, slotField) {
   sheet.onclick = function (e) { if (e.target === sheet) closePlatePickSheet(); };
   var inner = el('div', {
     'data-sheet-inner': 'true',
-    style: { background: 'var(--bg-inset)', borderTop: '1px solid var(--border-default)', borderRadius: '20px 20px 0 0', padding: '20px 16px 30px', maxHeight: '75vh', overflowY: 'auto', transform: 'translateY(100%)', transition: 'transform 0.28s cubic-bezier(0.32,0.72,0,1)' }
+    style: { background: 'var(--bg-inset)', borderTop: '1px solid var(--border-default)', borderRadius: '20px 20px 0 0', padding: '20px 16px 30px', maxHeight: '78vh', overflowY: 'auto', transform: 'translateY(100%)', transition: 'transform 0.28s cubic-bezier(0.32,0.72,0,1)' }
   });
   inner.appendChild(el('div', { style: { fontSize: '11px', color: 'var(--text-tertiary)', letterSpacing: '0.04em', fontWeight: '600', fontFamily: 'var(--font-ui)', textTransform: 'uppercase', marginBottom: '12px' } }, 'Choose ' + meta.label));
 
-  meta.list.forEach(function (opt) {
+  // One selectable variant row with a live kcal delta.
+  function variantRow(opt, indent) {
     var isSel = opt.id === sel[slotField];
-    // macro delta if this option were chosen
     var trial = Object.assign({}, sel); trial[slotField] = opt.id;
-    var trialMacros = computePlateMacros(trial);
-    var dK = trialMacros.kcal - baseMacros.kcal;
+    var dK = computePlateMacros(trial).kcal - baseMacros.kcal;
     var row = el('button', {
       class: 'btn pressable',
-      style: { width: '100%', boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', background: isSel ? 'var(--bg-card)' : 'transparent', border: '1px solid ' + (isSel ? 'var(--accent)' : 'var(--border-subtle)'), borderRadius: 'var(--radius-control)', padding: '13px 14px', marginBottom: '8px', cursor: 'pointer' },
+      style: { width: '100%', boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', background: isSel ? 'var(--bg-card)' : 'transparent', border: '1px solid ' + (isSel ? 'var(--accent)' : 'var(--border-subtle)'), borderRadius: 'var(--radius-control)', padding: '12px 14px', paddingLeft: (indent ? '26px' : '14px'), marginBottom: '7px', cursor: 'pointer' },
       onclick: (function (optId) { return function (e) {
         e.stopPropagation();
         setPlateSelection(mealKey, slotField, optId);
@@ -30579,12 +31073,255 @@ function openPlatePickSheet(mealKey, slotField) {
         if (typeof renderNutrition === 'function') renderNutrition();
       }; })(opt.id)
     });
-    var left = el('span', { style: { fontSize: '14px', color: isSel ? 'var(--accent)' : 'var(--text-primary)', fontFamily: 'var(--font-ui)', fontWeight: isSel ? '700' : '500' } }, opt.label);
-    var right = el('span', { style: { fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-data)', fontVariantNumeric: 'tabular-nums' } }, (dK === 0 ? (isSel ? 'current' : '\u00b10 kcal') : (dK > 0 ? '+' : '') + dK + ' kcal'));
-    row.appendChild(left); row.appendChild(right);
-    inner.appendChild(row);
+    row.appendChild(el('span', { style: { fontSize: '14px', color: isSel ? 'var(--accent)' : 'var(--text-primary)', fontFamily: 'var(--font-ui)', fontWeight: isSel ? '700' : '500' } }, opt.label));
+    row.appendChild(el('span', { style: { fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-data)', fontVariantNumeric: 'tabular-nums' } }, (dK === 0 ? (isSel ? 'current' : '\u00b10 kcal') : (dK > 0 ? '+' : '') + dK + ' kcal')));
+    return row;
+  }
+
+  if (meta.categories) {
+    // Two-level: categories expand to variants. The category holding the
+    // current selection starts expanded.
+    var selCat = _plateFindVariant(meta.categories, sel[slotField]);
+    var expanded = {};
+    if (selCat) expanded[selCat.category] = true;
+
+    meta.categories.forEach(function (cat) {
+      var wrap = el('div', { style: { marginBottom: '6px' } });
+      var variantHost = el('div', { style: { display: expanded[cat.category] ? 'block' : 'none' } });
+      var hasSel = cat.variants.some(function (v) { return v.id === sel[slotField]; });
+
+      var header = el('button', {
+        class: 'btn pressable',
+        style: { width: '100%', boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-card-nested)', border: '1px solid ' + (hasSel ? 'rgba(59,223,255,0.4)' : 'var(--border-default)'), borderRadius: 'var(--radius-control)', padding: '13px 14px', marginBottom: '7px', cursor: 'pointer' },
+        onclick: (function (host, name) { return function (e) {
+          e.stopPropagation();
+          var open = host.style.display !== 'none';
+          host.style.display = open ? 'none' : 'block';
+          this.querySelector('[data-caret]').textContent = open ? '\u203a' : '\u25be';
+        }; })(variantHost, cat.category)
+      });
+      header.appendChild(el('span', { style: { fontSize: '14px', fontWeight: '700', color: hasSel ? 'var(--accent)' : 'var(--text-primary)', fontFamily: 'var(--font-ui)' } }, cat.category + (hasSel ? ' \u00b7 ' + plateOptionLabel(slotField, sel[slotField]) : '')));
+      header.appendChild(el('span', { 'data-caret': 'true', style: { fontSize: '15px', color: 'var(--text-muted)' } }, expanded[cat.category] ? '\u25be' : '\u203a'));
+      wrap.appendChild(header);
+
+      cat.variants.forEach(function (opt) { variantHost.appendChild(variantRow(opt, true)); });
+      wrap.appendChild(variantHost);
+      inner.appendChild(wrap);
+    });
+  } else {
+    // Flat (marinade).
+    // Flat (marinade): signature sauces, then the user's own, then a button to
+    // build a new one. Custom marinades get an edit affordance.
+    var menu = (slotField === 'marinadeId') ? getMarinadeMenu() : meta.list;
+    var builtIn = menu.filter(function (o) { return !o.isCustom; });
+    var mine = menu.filter(function (o) { return o.isCustom; });
+    builtIn.forEach(function (opt) { inner.appendChild(variantRow(opt, false)); });
+
+    if (slotField === 'marinadeId') {
+      if (mine.length) {
+        inner.appendChild(el('div', { style: { fontSize: '11px', color: 'var(--text-tertiary)', letterSpacing: '0.04em', fontWeight: '600', fontFamily: 'var(--font-ui)', textTransform: 'uppercase', margin: '14px 0 8px' } }, 'My marinades'));
+        mine.forEach(function (opt) {
+          var rowWrap = el('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } });
+          var vr = variantRow(opt, false);
+          vr.style.flex = '1';
+          rowWrap.appendChild(vr);
+          var editBtn = el('button', {
+            class: 'btn pressable',
+            'aria-label': 'Edit ' + opt.label,
+            style: { background: 'transparent', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-control)', color: 'var(--text-muted)', padding: '10px 11px', marginBottom: '7px', cursor: 'pointer', fontSize: '13px' },
+            onclick: (function (mid) { return function (e) {
+              e.stopPropagation();
+              closePlatePickSheet();
+              setTimeout(function () { openMarinadeBuilder(mealKey, mid); }, 240);
+            }; })(opt.id)
+          }, '\u270e');
+          rowWrap.appendChild(editBtn);
+          inner.appendChild(rowWrap);
+        });
+      }
+      var createBtn = el('button', {
+        class: 'btn pressable',
+        style: { width: '100%', boxSizing: 'border-box', background: 'transparent', border: '1px dashed rgba(59,223,255,0.45)', borderRadius: 'var(--radius-control)', padding: '13px 14px', marginTop: '10px', cursor: 'pointer', color: 'var(--accent)', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: '700' },
+        onclick: function (e) {
+          e.stopPropagation();
+          closePlatePickSheet();
+          setTimeout(function () { openMarinadeBuilder(mealKey, null); }, 240);
+        }
+      }, '+ Build your own marinade');
+      inner.appendChild(createBtn);
+    }
+  }
+
+  sheet.appendChild(inner);
+  document.body.appendChild(sheet);
+  requestAnimationFrame(function () { inner.style.transform = 'translateY(0)'; sheet.style.opacity = '1'; });
+}
+
+// ─── MARINADE BUILDER ───────────────────────────────────────────────────────
+// Build or edit your own marinade: pick components from the palette, set the
+// per-serve grams, name it, and optionally write a method. Macros are computed
+// live from the components, exactly like the signature marinades, so a custom
+// marinade behaves identically everywhere once saved.
+function closeMarinadeBuilder() {
+  var sheet = document.getElementById('marinade-builder-sheet');
+  if (!sheet) return;
+  var inner = sheet.querySelector('[data-sheet-inner]');
+  if (inner) inner.style.transform = 'translateY(100%)';
+  sheet.style.opacity = '0';
+  setTimeout(function () { sheet.remove(); }, 220);
+}
+
+function openMarinadeBuilder(mealKey, editId) {
+  var existing = editId ? marinadeRecipeFor(editId) : null;
+  var draft = {
+    id: editId || null,
+    name: existing && existing.name ? existing.name : '',
+    method: existing && existing.method ? existing.method : '',
+    components: existing && Array.isArray(existing.components)
+      ? existing.components.map(function (c) { return { ingredientId: c.ingredientId, grams: c.grams }; })
+      : []
+  };
+
+  var sheet = el('div', {
+    id: 'marinade-builder-sheet',
+    style: { position: 'fixed', top: '0', left: '0', right: '0', bottom: '0', zIndex: '6100', background: 'rgba(0,0,0,0.75)', opacity: '0', transition: 'opacity 0.22s cubic-bezier(0.32,0.72,0,1)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }
+  });
+  sheet.onclick = function (e) { if (e.target === sheet) closeMarinadeBuilder(); };
+  var inner = el('div', {
+    'data-sheet-inner': 'true',
+    style: { background: 'var(--bg-inset)', borderTop: '1px solid var(--border-default)', borderRadius: '20px 20px 0 0', padding: '20px 16px 30px', maxHeight: '86vh', overflowY: 'auto', transform: 'translateY(100%)', transition: 'transform 0.28s cubic-bezier(0.32,0.72,0,1)' }
   });
 
+  inner.appendChild(el('div', { style: { fontSize: '11px', color: 'var(--text-tertiary)', letterSpacing: '0.04em', fontWeight: '600', fontFamily: 'var(--font-ui)', textTransform: 'uppercase', marginBottom: '12px' } }, editId ? 'Edit marinade' : 'Build your own marinade'));
+
+  var nameInput = el('input', {
+    type: 'text', placeholder: 'Name it (e.g. Smoky lime rub)', value: draft.name,
+    style: { width: '100%', boxSizing: 'border-box', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-control)', padding: '12px', color: 'var(--text-primary)', fontFamily: 'var(--font-ui)', fontSize: '14px', marginBottom: '12px' }
+  });
+  nameInput.oninput = function () { draft.name = this.value; };
+  inner.appendChild(nameInput);
+
+  var macroLine = el('div', { style: { fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'var(--font-data)', fontVariantNumeric: 'tabular-nums', marginBottom: '12px' } }, '');
+  inner.appendChild(macroLine);
+
+  var listHost = el('div', {});
+  inner.appendChild(listHost);
+
+  var msg = el('div', { style: { fontSize: '12px', color: 'var(--status-warning)', fontFamily: 'var(--font-ui)', minHeight: '16px', margin: '4px 0 8px' } }, '');
+
+  function draftMacros() {
+    var t = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+    draft.components.forEach(function (c) {
+      var m = _plateComponentMacros(c.ingredientId, c.grams);
+      t.kcal += m.kcal; t.protein += m.protein; t.carbs += m.carbs; t.fat += m.fat;
+    });
+    return t;
+  }
+
+  function refresh() {
+    var t = draftMacros();
+    macroLine.textContent = Math.round(t.kcal) + ' kcal  \u00b7  P ' + Math.round(t.protein) + '  C ' + Math.round(t.carbs) + '  F ' + Math.round(t.fat) + '  (per serve)';
+    listHost.innerHTML = '';
+    if (!draft.components.length) {
+      listHost.appendChild(el('div', { style: { fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'var(--font-ui)', padding: '10px 0 4px' } }, 'No ingredients yet. Add a few below.'));
+    }
+    draft.components.forEach(function (c, idx) {
+      var entry = INGREDIENT_DATABASE[c.ingredientId];
+      var nm = entry && entry.name ? entry.name.split(',')[0] : c.ingredientId;
+      var row = el('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-control)', padding: '10px 12px', marginBottom: '7px' } });
+      row.appendChild(el('span', { style: { flex: '1', fontSize: '13px', color: 'var(--text-primary)', fontFamily: 'var(--font-ui)' } }, nm));
+      var gInput = el('input', {
+        type: 'number', min: '1', max: '200', value: String(c.grams),
+        style: { width: '58px', boxSizing: 'border-box', background: 'var(--bg-inset)', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '7px 8px', color: 'var(--text-primary)', fontFamily: 'var(--font-data)', fontSize: '13px', textAlign: 'right' }
+      });
+      gInput.oninput = (function (i) { return function () {
+        var v = parseFloat(this.value);
+        draft.components[i].grams = (isFinite(v) && v > 0) ? Math.min(v, 200) : 0;
+        var t2 = draftMacros();
+        macroLine.textContent = Math.round(t2.kcal) + ' kcal  \u00b7  P ' + Math.round(t2.protein) + '  C ' + Math.round(t2.carbs) + '  F ' + Math.round(t2.fat) + '  (per serve)';
+      }; })(idx);
+      row.appendChild(gInput);
+      row.appendChild(el('span', { style: { fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-ui)' } }, 'g'));
+      row.appendChild(el('button', {
+        class: 'btn pressable', 'aria-label': 'Remove ' + nm,
+        style: { background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '16px', padding: '0 2px' },
+        onclick: (function (i) { return function (e) { e.stopPropagation(); draft.components.splice(i, 1); refresh(); }; })(idx)
+      }, '\u00d7'));
+      listHost.appendChild(row);
+    });
+  }
+
+  // Component palette: tap to add.
+  var paletteWrap = el('div', { style: { marginTop: '12px' } });
+  paletteWrap.appendChild(el('div', { style: { fontSize: '11px', color: 'var(--text-tertiary)', letterSpacing: '0.04em', fontWeight: '600', fontFamily: 'var(--font-ui)', textTransform: 'uppercase', marginBottom: '8px' } }, 'Add ingredient'));
+  var chips = el('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '6px' } });
+  MARINADE_COMPONENT_IDS.forEach(function (id) {
+    var entry = (typeof INGREDIENT_DATABASE !== 'undefined') ? INGREDIENT_DATABASE[id] : null;
+    if (!entry) return;
+    var nm = entry.name ? entry.name.split(',')[0] : id;
+    chips.appendChild(el('button', {
+      class: 'btn pressable',
+      style: { background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-pill)', padding: '7px 11px', cursor: 'pointer', color: 'var(--text-secondary)', fontFamily: 'var(--font-ui)', fontSize: '12px' },
+      onclick: (function (iid) { return function (e) {
+        e.stopPropagation();
+        var already = draft.components.some(function (c) { return c.ingredientId === iid; });
+        if (already) return;
+        draft.components.push({ ingredientId: iid, grams: 10 });
+        refresh();
+      }; })(id)
+    }, nm));
+  });
+  paletteWrap.appendChild(chips);
+  inner.appendChild(paletteWrap);
+
+  var methodInput = el('textarea', {
+    placeholder: 'Method (optional): how to make it', rows: '3',
+    style: { width: '100%', boxSizing: 'border-box', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-control)', padding: '11px 12px', color: 'var(--text-primary)', fontFamily: 'var(--font-ui)', fontSize: '13px', marginTop: '14px', resize: 'vertical' }
+  });
+  methodInput.value = draft.method;
+  methodInput.oninput = function () { draft.method = this.value; };
+  inner.appendChild(methodInput);
+  inner.appendChild(msg);
+
+  var saveBtn = el('button', {
+    class: 'btn pressable',
+    style: { width: '100%', boxSizing: 'border-box', background: 'var(--accent)', color: '#001014', border: 'none', borderRadius: 'var(--radius-control)', padding: '13px', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: '700', marginTop: '10px' },
+    onclick: function (e) {
+      e.stopPropagation();
+      var nm = (draft.name || '').trim();
+      if (!nm) { msg.textContent = 'Give your marinade a name.'; return; }
+      var valid = draft.components.filter(function (c) { return c.grams > 0; });
+      if (!valid.length) { msg.textContent = 'Add at least one ingredient.'; return; }
+      var saved = saveCustomMarinade({
+        id: draft.id, name: nm, method: (draft.method || '').trim(),
+        components: valid, isCustom: true
+      });
+      if (mealKey) setPlateSelection(mealKey, 'marinadeId', saved.id);
+      closeMarinadeBuilder();
+      if (typeof renderNutrition === 'function') renderNutrition();
+    }
+  }, editId ? 'Save changes' : 'Save marinade');
+  inner.appendChild(saveBtn);
+
+  if (editId) {
+    inner.appendChild(el('button', {
+      class: 'btn pressable',
+      style: { width: '100%', boxSizing: 'border-box', background: 'transparent', color: 'var(--status-warning)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-control)', padding: '12px', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: '600', marginTop: '8px' },
+      onclick: function (e) {
+        e.stopPropagation();
+        deleteCustomMarinade(editId);
+        // Any plate still pointing at it falls back to the default marinade.
+        if (mealKey) {
+          var sel = getPlateSelection(mealKey);
+          if (sel.marinadeId === editId) setPlateSelection(mealKey, 'marinadeId', PLATE_DEFAULT.marinadeId);
+        }
+        closeMarinadeBuilder();
+        if (typeof renderNutrition === 'function') renderNutrition();
+      }
+    }, 'Delete marinade'));
+  }
+
+  refresh();
   sheet.appendChild(inner);
   document.body.appendChild(sheet);
   requestAnimationFrame(function () { inner.style.transform = 'translateY(0)'; sheet.style.opacity = '1'; });
@@ -30603,7 +31340,7 @@ function renderPlateSelectors(meal) {
       onclick: (function (f) { return function (e) { e.stopPropagation(); openPlatePickSheet(key, f); }; })(field)
     });
     chip.appendChild(el('span', { style: { fontSize: '10px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-ui)', fontWeight: '600' } }, PLATE_SLOT_META[field].label));
-    chip.appendChild(el('span', { style: { fontSize: '13px', color: 'var(--accent)', fontFamily: 'var(--font-ui)', fontWeight: '700' } }, plateOptionLabel(field, sel[field])));
+    chip.appendChild(el('span', { style: { fontSize: '13px', color: 'var(--accent)', fontFamily: 'var(--font-ui)', fontWeight: '700' } }, plateDisplayName(field, sel[field])));
     chip.appendChild(el('span', { style: { fontSize: '10px', color: 'var(--text-muted)' } }, '\u25be'));
     wrap.appendChild(chip);
   });
@@ -30643,7 +31380,7 @@ function buildPlateMeal(base, dayNum) {
   // Preserve the slot's original designed calories so scaling targets the slot,
   // not the plate's lower fixed baseline (otherwise the day falls short).
   meal._plateBaselineKcal = (base && base.kcal) ? base.kcal : macros.kcal;
-  meal.name = pOpt.label + ' + ' + cOpt.label;
+  meal.name = plateDisplayName('proteinId', pOpt.id) + ' + ' + plateDisplayName('carbId', cOpt.id);
   meal.kcal = macros.kcal;
   meal.protein = macros.protein;
   meal.carbs = macros.carbs;
