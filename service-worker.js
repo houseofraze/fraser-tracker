@@ -18,7 +18,7 @@
 // shell.
 // ──────────────────────────────────────────────────────────────────────────
 
-const APP_VERSION = '2026.05.19.74';  // KEEP IN SYNC with index.html's APP_VERSION
+const APP_VERSION = '2026.05.19.77';  // KEEP IN SYNC with index.html's APP_VERSION
 const CACHE_VERSION = APP_VERSION;
 const CACHE_NAME = `flow-tracker-${CACHE_VERSION}`;
 

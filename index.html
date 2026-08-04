@@ -733,7 +733,7 @@
 //   1. Bump APP_VERSION here
 //   2. Bump CACHE_VERSION in service-worker.js to match
 //   3. mv fraser-final-complete.html index.html; git commit; git push
-const APP_VERSION = '2026.05.19.74';
+const APP_VERSION = '2026.05.19.77';
 
 let activeTab = 'today';
 let activeDay = 0; // will be set to today on init
@@ -9499,6 +9499,207 @@ function closeFullscreenTimer() {
   if (existing) existing.remove();
 }
 
+// ─── CONDITIONING (finishers and full sessions) ───────────────────────────────
+// An optional conditioning block offered at the end of a workout. The design
+// rules it encodes:
+//   1. Conditioning is never built from skill movements (no high-rep pulling,
+//      pressing, or hanging as the engine).
+//   2. Interference is mostly local, so leg-dominant work is the cheapest
+//      engine for an upper-body-skill athlete.
+//   3. A finisher avoids whatever the session just hammered.
+//   4. Compression stations pay twice: conditioning plus press and L-sit work.
+//
+// Rule 3 is enforced by computation rather than by hand: each station declares
+// the tissue it loads, each session type declares the tissue it fatigues, and a
+// template only survives if none of its stations touch fatigued tissue. That
+// derives the documented bans automatically (mountain climbers and bear crawl
+// fall out on straight-arm day because they load the support shoulder) and it
+// is why the legs and compression day correctly ends up with no finisher: every
+// finisher station is legs or core, which is exactly what that day trained.
+
+const CONDITIONING_EXERCISES = {
+  'jump-squats':      { name: 'Jump squats',        primaryPattern: 'knee_dominant', loadedTissue: ['legs'], isBilateral: true },
+  'split-jumps':      { name: 'Split jumps',        primaryPattern: 'knee_dominant', loadedTissue: ['legs'], isBilateral: true },
+  'skater-bounds':    { name: 'Skater bounds',      primaryPattern: 'knee_dominant', loadedTissue: ['legs'], isBilateral: true },
+  'broad-jump-walk':  { name: 'Broad jump, walk back', primaryPattern: 'knee_dominant', loadedTissue: ['legs'], isBilateral: true },
+  'broad-jumps':      { name: 'Broad jumps',        primaryPattern: 'knee_dominant', loadedTissue: ['legs'], isBilateral: true },
+  'walking-lunges':   { name: 'Walking lunges',     primaryPattern: 'knee_dominant', loadedTissue: ['legs'], isBilateral: true },
+  'step-ups-fast':    { name: 'Step-ups, fast',     primaryPattern: 'knee_dominant', loadedTissue: ['legs'], isBilateral: true },
+  'high-knees':       { name: 'High knees',         primaryPattern: 'locomotion',    loadedTissue: ['legs'], isBilateral: true },
+  'lateral-shuffle':  { name: 'Lateral shuffle',    primaryPattern: 'locomotion',    loadedTissue: ['legs'], isBilateral: true },
+  'sprawls':          { name: 'Sprawls',            primaryPattern: 'metabolic',     loadedTissue: ['legs', 'core'], isBilateral: true },
+  'hollow-rocks':     { name: 'Hollow rocks',       primaryPattern: 'compression',   loadedTissue: ['core'], isBilateral: true },
+  'hollow-hold':      { name: 'Hollow hold',        primaryPattern: 'compression',   loadedTissue: ['core'], isBilateral: true },
+  'v-ups':            { name: 'V-ups',              primaryPattern: 'compression',   loadedTissue: ['core'], isBilateral: true },
+  'tuck-ups':         { name: 'Tuck-ups',           primaryPattern: 'compression',   loadedTissue: ['core'], isBilateral: true },
+  'seated-leg-lifts': { name: 'Seated leg lifts',   primaryPattern: 'compression',   loadedTissue: ['core'], isBilateral: true },
+  'dead-bugs':        { name: 'Dead bugs',          primaryPattern: 'anti_extension',loadedTissue: ['core'], isBilateral: true },
+  // Stations below load the support shoulder, the pushing muscles, or grip, so
+  // they are automatically excluded from the days that fatigue those tissues.
+  'mountain-climbers':{ name: 'Mountain climbers',  primaryPattern: 'anti_extension',loadedTissue: ['core', 'shoulders_support'], isBilateral: true },
+  'bear-crawl':       { name: 'Bear crawl',         primaryPattern: 'locomotion',    loadedTissue: ['legs', 'core', 'shoulders_support'], isBilateral: true },
+  'push-ups':         { name: 'Push-up variation',  primaryPattern: 'push',          loadedTissue: ['push', 'shoulders_support'], isBilateral: true },
+  'hanging-knee-raises': { name: 'Hanging knee raises', primaryPattern: 'compression', loadedTissue: ['core', 'grip'], isBilateral: true }
+};
+
+const CONDITIONING_TEMPLATES = [
+  { id: 'sa-s1', name: 'Straight arm S1', type: 'finisher', suitableAfter: ['straight_arm'],
+    stations: ['jump-squats', 'hollow-rocks', 'split-jumps', 'dead-bugs'],
+    workSeconds: 40, restSeconds: 20, defaultRounds: 2 },
+  { id: 'sa-s2', name: 'Straight arm S2', type: 'finisher', suitableAfter: ['straight_arm'],
+    stations: ['skater-bounds', 'v-ups', 'high-knees', 'hollow-hold'],
+    workSeconds: 40, restSeconds: 20, defaultRounds: 2 },
+  { id: 'sa-s3', name: 'Straight arm S3', type: 'finisher', suitableAfter: ['straight_arm'],
+    stations: ['broad-jump-walk', 'seated-leg-lifts', 'lateral-shuffle', 'tuck-ups'],
+    workSeconds: 40, restSeconds: 20, defaultRounds: 2 },
+  { id: 'ba-b1', name: 'Bent arm B1', type: 'finisher', suitableAfter: ['bent_arm'],
+    stations: ['jump-squats', 'hollow-rocks', 'walking-lunges', 'v-ups'],
+    workSeconds: 40, restSeconds: 20, defaultRounds: 2 },
+  { id: 'ba-b2', name: 'Bent arm B2', type: 'finisher', suitableAfter: ['bent_arm'],
+    stations: ['sprawls', 'high-knees', 'split-jumps', 'seated-leg-lifts'],
+    workSeconds: 40, restSeconds: 20, defaultRounds: 2 },
+  { id: 'ba-b3', name: 'Bent arm B3', type: 'finisher', suitableAfter: ['bent_arm'],
+    stations: ['step-ups-fast', 'mountain-climbers', 'skater-bounds', 'hollow-hold'],
+    workSeconds: 40, restSeconds: 20, defaultRounds: 2 },
+  { id: 'full-1', name: 'Full session, run based', type: 'full_session', suitableAfter: ['legs_core', 'rest'],
+    stations: ['broad-jumps', 'bear-crawl', 'walking-lunges', 'push-ups', 'v-ups'],
+    workSeconds: 45, restSeconds: 15, defaultRounds: 3,
+    interRoundBlock: { type: 'run', label: '400m run', seconds: null } },
+  { id: 'full-2', name: 'Full session, no run', type: 'full_session', suitableAfter: ['legs_core', 'rest'],
+    stations: ['jump-squats', 'bear-crawl', 'skater-bounds', 'sprawls', 'hollow-rocks'],
+    workSeconds: 45, restSeconds: 15, defaultRounds: 3,
+    interRoundBlock: { type: 'shuttle', label: '60s shuttles or skipping', seconds: 60 } },
+  { id: 'full-3', name: 'Full session, pair relay', type: 'full_session', suitableAfter: ['legs_core', 'rest'],
+    stations: ['jump-squats', 'push-ups', 'v-ups', 'walking-lunges'],
+    workSeconds: 45, restSeconds: 15, defaultRounds: 3,
+    interRoundBlock: { type: 'run', label: 'Run loop, swap at the turn', seconds: null } }
+];
+
+// Tissue each session type leaves fatigued. A finisher must avoid all of it.
+const CONDITIONING_FATIGUE = {
+  straight_arm: ['shoulders_support', 'pull', 'grip'],
+  bent_arm: ['push', 'pull', 'grip'],
+  legs_core: ['legs', 'core'],
+  rest: []
+};
+
+// Classify the session from the day title, which the program already carries.
+// This is more reliable than inferring from exercises (which have no tissue
+// metadata) and it stays correct when exercises are swapped. Straight arm wins
+// when a day reads as both, since that tissue recovers slowest.
+function conditioningSessionType(day) {
+  if (!day) return null;
+  var text = ((day.title || '') + ' ' + (day.subtitle || '')).toLowerCase();
+  if (!text.trim()) return null;
+  if (/straight arm|planche|front lever|back lever|human flag/.test(text)) return 'straight_arm';
+  if (/bent arm|muscle-?up|hspu|handstand push|archer|one arm pull|weighted vertical/.test(text)) return 'bent_arm';
+  if (/rest|recovery/.test(text)) return 'rest';
+  if (/legs|compression|pistol|squat/.test(text)) return 'legs_core';
+  return null;
+}
+
+// True when any station in the template loads tissue the session fatigued.
+function conditioningTemplateConflicts(template, fatiguedTissue) {
+  if (!template || !Array.isArray(fatiguedTissue) || !fatiguedTissue.length) return false;
+  return (template.stations || []).some(function (sid) {
+    var ex = CONDITIONING_EXERCISES[sid];
+    if (!ex) return false;
+    return (ex.loadedTissue || []).some(function (t) { return fatiguedTissue.indexOf(t) >= 0; });
+  });
+}
+
+// Finisher templates that are safe after this session type.
+function conditioningCandidates(sessionType) {
+  var fatigued = CONDITIONING_FATIGUE[sessionType] || [];
+  return CONDITIONING_TEMPLATES.filter(function (t) {
+    if (t.type !== 'finisher') return false;
+    if ((t.suitableAfter || []).indexOf(sessionType) < 0) return false;
+    return !conditioningTemplateConflicts(t, fatigued);
+  });
+}
+
+// Full sessions offered as an explicit opt-in (they are the day's work, not a
+// finisher, so they are not conflict-filtered).
+function conditioningFullSessions() {
+  return CONDITIONING_TEMPLATES.filter(function (t) { return t.type === 'full_session'; });
+}
+
+// Recommend a finisher: rotate to the least recently used, and never repeat the
+// previous one when an alternative exists. Returns null when no finisher is
+// appropriate, which is the correct answer on a legs and compression day.
+function recommendConditioningTemplate(sessionType) {
+  var candidates = conditioningCandidates(sessionType);
+  if (!candidates.length) return null;
+  var log = getConditioningLog();
+  var lastUsedAt = {};
+  var mostRecentId = null, mostRecentAt = 0;
+  log.forEach(function (e) {
+    if (!e || !e.templateId) return;
+    var t = e.completedAt || 0;
+    if (!lastUsedAt[e.templateId] || t > lastUsedAt[e.templateId]) lastUsedAt[e.templateId] = t;
+    if (t > mostRecentAt) { mostRecentAt = t; mostRecentId = e.templateId; }
+  });
+  var pool = candidates;
+  if (candidates.length > 1 && mostRecentId) {
+    var without = candidates.filter(function (t) { return t.id !== mostRecentId; });
+    if (without.length) pool = without;
+  }
+  pool = pool.slice().sort(function (a, b) {
+    return (lastUsedAt[a.id] || 0) - (lastUsedAt[b.id] || 0);
+  });
+  return pool[0];
+}
+
+// Estimated duration in seconds, including lead-in and inter-round blocks.
+function conditioningEstimatedSeconds(template, rounds) {
+  if (!template) return 0;
+  var r = rounds || template.defaultRounds || 2;
+  var perRound = (template.stations || []).length * ((template.workSeconds || 40) + (template.restSeconds || 20));
+  var blocks = 0;
+  if (template.interRoundBlock && template.interRoundBlock.seconds) blocks = template.interRoundBlock.seconds * Math.max(0, r - 1);
+  return 10 + (perRound * r) + blocks;
+}
+
+// ── Conditioning log ──
+const CONDITIONING_LOG_KEY = 'flow.conditioning.log';
+
+function getConditioningLog() {
+  try {
+    var raw = localStorage.getItem(CONDITIONING_LOG_KEY);
+    var list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list : [];
+  } catch (e) { return []; }
+}
+
+function logConditioning(entry) {
+  if (!entry || !entry.status) return null;
+  var all = getConditioningLog();
+  entry.completedAt = entry.completedAt || Date.now();
+  all.push(entry);
+  // Keep the log bounded; this is a rolling record, not an archive.
+  if (all.length > 400) all = all.slice(all.length - 400);
+  try { localStorage.setItem(CONDITIONING_LOG_KEY, JSON.stringify(all)); } catch (e) {}
+  return entry;
+}
+
+// Count of conditioning actually done this week (completed or partial). Shown
+// as information only: no target, no streak, no ring to close.
+function conditioningCountThisWeek() {
+  var now = new Date();
+  var day = (now.getDay() + 6) % 7; // Monday start
+  var monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day).getTime();
+  return getConditioningLog().filter(function (e) {
+    return e && (e.status === 'completed' || e.status === 'partial') && (e.completedAt || 0) >= monday;
+  }).length;
+}
+
+function conditioningTemplateById(id) {
+  for (var i = 0; i < CONDITIONING_TEMPLATES.length; i++) {
+    if (CONDITIONING_TEMPLATES[i].id === id) return CONDITIONING_TEMPLATES[i];
+  }
+  return null;
+}
+
 // ─── WORKOUT MODE ─────────────────────────────────────────────────────────────
 // A guided, phase-driven session flow: countdown → working → rest → input → next.
 // Persists state to localStorage on every phase change so exits are resumable.
@@ -9531,6 +9732,12 @@ function wmStorageKey() {
 // Nominal pre-start countdown length. Single source of truth so the display
 // can never show more than the countdown was ever set to.
 const WM_COUNTDOWN_MS = 5000;
+// The conditioning block uses a longer lead-in, so the countdown clamp has to
+// be phase aware: clamping a 10s lead-in to the 5s set countdown would cut it.
+const WM_COND_LEADIN_MS = 10000;
+function wmNominalCountdownMs() {
+  return (wmState && wmState.phase === 'cond-leadin') ? WM_COND_LEADIN_MS : WM_COUNTDOWN_MS;
+}
 
 // ─── PAUSE STATE: REMAINING DURATIONS, NOT TIMESTAMP ARITHMETIC ──────────────
 // Pausing used to record only pausedAt, and resuming shifted every absolute end
@@ -9558,7 +9765,7 @@ function wmRestoreFromRemaining() {
   if (!wmState || !wmState.remaining) return;
   const now = Date.now();
   const rem = wmState.remaining;
-  if (rem.countdown != null) wmState.countdownEndTime = now + Math.min(rem.countdown, WM_COUNTDOWN_MS);
+  if (rem.countdown != null) wmState.countdownEndTime = now + Math.min(rem.countdown, wmNominalCountdownMs());
   if (rem.hold != null) wmState.holdEndTime = now + rem.hold;
   if (rem.rest != null) wmState.restEndTime = now + rem.rest;
   if (rem.workingElapsed != null) wmState.workingStartTime = now - rem.workingElapsed;
@@ -9732,15 +9939,15 @@ function wmResumeSession() {
   // Legacy saves have no remaining snapshot. Reconstruct one so resume restores
   // sensible time left rather than an expired or inflated countdown.
   if (!wmState.remaining) {
-    if (wmState.phase === 'countdown') {
-      wmState.remaining = { countdown: WM_COUNTDOWN_MS, hold: null, rest: null, workingElapsed: null };
+    if (wmState.phase === 'countdown' || wmState.phase === 'cond-leadin') {
+      wmState.remaining = { countdown: wmNominalCountdownMs(), hold: null, rest: null, workingElapsed: null };
     } else {
       wmCaptureRemaining();
     }
   }
   // Clamp a restored countdown: it can never exceed its nominal length.
   if (wmState.remaining && wmState.remaining.countdown != null) {
-    wmState.remaining.countdown = Math.max(0, Math.min(wmState.remaining.countdown, WM_COUNTDOWN_MS));
+    wmState.remaining.countdown = Math.max(0, Math.min(wmState.remaining.countdown, wmNominalCountdownMs()));
   }
   wmRender();
   wmRequestWakeLock();
@@ -10044,7 +10251,7 @@ function wmRender() {
   const topBar = wmBuildTopBar(day, ex);
   // Adapt overlay background to phase
   const phase = wmState.phase;
-  const isPrep = ['weight-setup','weight-confirm','exercise-summary','workout-summary'].indexOf(phase) >= 0;
+  const isPrep = ['weight-setup','weight-confirm','exercise-summary','workout-summary','cond-block','cond-complete'].indexOf(phase) >= 0;
   overlay.style.background = '#080808';
   overlay.style.transition = 'background 0.4s ease';
 
@@ -10067,6 +10274,11 @@ function wmRender() {
     case 'rest':               body.appendChild(wmRenderRest(ex)); break;
     case 'exercise-summary':   body.appendChild(wmRenderExerciseSummary(ex)); break;
     case 'workout-summary':    body.appendChild(wmRenderWorkoutSummary(day)); break;
+    case 'cond-leadin':
+    case 'cond-work':
+    case 'cond-rest':
+    case 'cond-block':
+    case 'cond-complete':      body.appendChild(wmRenderConditioning()); break;
     default:                   body.appendChild(wmRenderWeightSetup(ex)); break;
   }
   overlay.appendChild(body);
@@ -11426,6 +11638,563 @@ function renderGraduationPrompt() {
 }
 // ═══ GRADUATION READINESS (Stage 4.5) END ═══
 
+// ─── CONDITIONING TIMER (inside workout mode) ────────────────────────────────
+// Runs as workout-mode phases rather than a separate timer, so it inherits the
+// hardened timing already proven there: wall-clock end times (never an
+// accumulating counter, which drifts and stalls when suspended), the wake lock,
+// pause via remaining-duration snapshots, and auto-pause on backgrounding.
+
+// Conditioning cues. Web Audio mixes with whatever the user is listening to
+// rather than interrupting it, so background music ducks instead of stopping.
+// The screen is not being watched mid-circuit, so audio and haptics carry the
+// transitions and both can be muted independently of the rest of the app.
+const CONDITIONING_MUTE_KEY = 'flow.conditioning.mute';
+
+function condIsMuted() {
+  try { return localStorage.getItem(CONDITIONING_MUTE_KEY) === '1'; } catch (e) { return false; }
+}
+
+function condSetMuted(muted) {
+  try { localStorage.setItem(CONDITIONING_MUTE_KEY, muted ? '1' : '0'); } catch (e) {}
+}
+
+// A short shaped tone. Rising for work, lower and softer for rest.
+function condTone(freqStart, freqEnd, seconds, peak) {
+  if (condIsMuted()) return;
+  var ctx = ensureAudioCtx();
+  if (!ctx) return;
+  try {
+    var now = ctx.currentTime;
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freqStart, now);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(40, freqEnd), now + seconds);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(peak, now + 0.02);
+    gain.gain.linearRampToValueAtTime(0, now + seconds);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(now); osc.stop(now + seconds + 0.02);
+  } catch (e) {}
+}
+
+function condHaptic(pattern) {
+  if (condIsMuted()) return;
+  if (navigator.vibrate) { try { navigator.vibrate(pattern); } catch (e) {} }
+}
+
+function condCueWork()     { condTone(520, 780, 0.22, 0.22); condHaptic([60]); }
+function condCueRest()     { condTone(420, 300, 0.26, 0.16); condHaptic([35]); }
+function condCueTick()     { if (!condIsMuted()) { try { playCountdownBlip(); } catch (e) {} } condHaptic([20]); }
+function condCueSwitch()   { condTone(660, 660, 0.12, 0.2); condHaptic([40, 60, 40]); }
+function condCueComplete() { if (!condIsMuted()) { try { playStartTone(); } catch (e) {} } condHaptic([120, 80, 220]); }
+
+// True when the current station works one side at a time, in which case the
+// interval splits in half with a switch cue at the midpoint.
+function condCurrentIsUnilateral() {
+  var t = condTemplate();
+  if (!t || !wmState.cond) return false;
+  var sid = (t.stations || [])[wmState.cond.stationIndex];
+  var ex = sid ? CONDITIONING_EXERCISES[sid] : null;
+  return !!(ex && ex.isBilateral === false);
+}
+
+function wmStartConditioning(template, rounds) {
+  if (!wmState || !template) return;
+  wmState.cond = {
+    templateId: template.id,
+    stationIndex: 0,
+    round: 1,
+    rounds: rounds || conditioningRoundsDefault(template),
+    stationsSkipped: [],
+    workSeconds: template.workSeconds,
+    restSeconds: template.restSeconds,
+    totalWorkSeconds: 0,
+    startedAt: Date.now()
+  };
+  wmState.phase = 'cond-leadin';
+  wmState.countdownEndTime = Date.now() + 10000;  // 10s lead-in
+  wmState.pausedAt = null;
+  wmState.remaining = null;
+  wmPersist();
+  wmRequestWakeLock();
+  wmRender();
+}
+
+function condTemplate() {
+  return (wmState && wmState.cond) ? conditioningTemplateById(wmState.cond.templateId) : null;
+}
+
+function condStationName(idx) {
+  var t = condTemplate();
+  if (!t) return '';
+  var sid = (t.stations || [])[idx];
+  var ex = sid ? CONDITIONING_EXERCISES[sid] : null;
+  return ex ? ex.name : '';
+}
+
+// Advance through the circuit: work to rest, rest to the next station, and at
+// the end of a round either an inter-round block, the next round, or complete.
+function condAdvance() {
+  var c = wmState.cond, t = condTemplate();
+  if (!c || !t) return;
+  var stationCount = (t.stations || []).length;
+
+  if (wmState.phase === 'cond-leadin') {
+    wmState.phase = 'cond-work';
+    wmState.holdEndTime = Date.now() + c.workSeconds * 1000;
+  } else if (wmState.phase === 'cond-work') {
+    c.totalWorkSeconds += c.workSeconds;
+    var lastStation = (c.stationIndex >= stationCount - 1);
+    if (lastStation && c.round >= c.rounds) {
+      wmState.phase = 'cond-complete';
+    } else if (lastStation && t.interRoundBlock) {
+      wmState.phase = 'cond-block';
+    } else {
+      wmState.phase = 'cond-rest';
+      wmState.restEndTime = Date.now() + c.restSeconds * 1000;
+    }
+  } else if (wmState.phase === 'cond-rest') {
+    if (c.stationIndex >= stationCount - 1) {
+      c.stationIndex = 0; c.round += 1;
+    } else {
+      c.stationIndex += 1;
+    }
+    wmState.phase = 'cond-work';
+    wmState.holdEndTime = Date.now() + c.workSeconds * 1000;
+  } else if (wmState.phase === 'cond-block') {
+    c.stationIndex = 0; c.round += 1;
+    wmState.phase = 'cond-work';
+    wmState.holdEndTime = Date.now() + c.workSeconds * 1000;
+  }
+
+  // Cue every transition: the screen is not being watched mid-circuit.
+  wmState._condSwitched = false;
+  if (wmState.phase === 'cond-work') condCueWork();
+  else if (wmState.phase === 'cond-rest') condCueRest();
+  else if (wmState.phase === 'cond-complete') condCueComplete();
+  else if (wmState.phase === 'cond-block') condCueRest();
+
+  wmState.pausedAt = null;
+  wmState.remaining = null;
+  wmPersist();
+  wmRender();
+}
+
+function condFinish(status, rpe) {
+  var c = wmState.cond, t = condTemplate();
+  if (c && t) {
+    logConditioning({
+      sessionId: 'w' + (wmState.weekOffset != null ? wmState.weekOffset : 0) + 'd' + (wmState.dayNum != null ? wmState.dayNum : 0),
+      templateId: t.id, status: status,
+      roundsCompleted: status === 'completed' ? c.rounds : Math.max(0, c.round - 1),
+      roundsPlanned: c.rounds,
+      stationsSkipped: c.stationsSkipped || [],
+      totalWorkSeconds: c.totalWorkSeconds || 0,
+      rpe: (typeof rpe === 'number' && rpe >= 1 && rpe <= 10) ? rpe : null
+    });
+  }
+  wmState.cond = null;
+  wmState.phase = 'workout-summary';
+  wmState.pausedAt = null;
+  wmState.remaining = null;
+  wmPersist();
+  wmRender();
+}
+
+function condBigNumber(text, color) {
+  return el('div', {
+    style: { fontFamily: 'var(--font-data)', fontVariantNumeric: 'tabular-nums', fontSize: '84px', fontWeight: '700', color: color, lineHeight: '1', textAlign: 'center', letterSpacing: '-0.02em' }
+  }, text);
+}
+
+function condHeader(c, t) {
+  var wrap = div({ textAlign: 'center', marginBottom: '10px' });
+  wrap.appendChild(el('div', { style: { fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-ui)', letterSpacing: '0.04em', fontWeight: '600', textTransform: 'uppercase' } }, t.name.toLowerCase()));
+  wrap.appendChild(el('div', { style: { fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-data)', marginTop: '4px' } }, 'round ' + c.round + ' / ' + c.rounds));
+  return wrap;
+}
+
+function condControls(showSkip) {
+  var row = div({ display: 'flex', gap: '8px', marginTop: '18px' });
+  function btn(label, onclick, accent) {
+    return el('button', {
+      class: 'btn pressable',
+      style: { flex: '1', background: accent ? 'var(--bg-inset)' : 'transparent', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-control)', color: 'var(--text-secondary)', padding: '13px 8px', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: '600' },
+      onclick: onclick
+    }, label);
+  }
+  row.appendChild(btn(wmState.pausedAt ? 'resume' : 'pause', function () { wmTogglePause(); }, true));
+  if (showSkip) {
+    row.appendChild(btn('skip station', function () {
+      var c = wmState.cond, t = condTemplate();
+      if (c && t) {
+        var sid = (t.stations || [])[c.stationIndex];
+        if (sid) c.stationsSkipped.push(sid);
+        wmState.phase = 'cond-work';
+        condAdvance();
+      }
+    }));
+  }
+  row.appendChild(btn('end', function () { condFinish('partial'); }));
+  return row;
+}
+
+function wmRenderConditioning() {
+  var c = wmState.cond, t = condTemplate();
+  var wrap = div({ padding: '10px 0' });
+  if (!c || !t) { wrap.appendChild(el('div', {}, '')); return wrap; }
+
+  if (wmState.phase === 'cond-complete') {
+    wrap.appendChild(el('div', { style: { textAlign: 'center', fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' } }, 'conditioning done'));
+    wrap.appendChild(el('div', { style: { textAlign: 'center', fontSize: '13px', color: 'var(--text-secondary)', fontFamily: 'var(--font-data)', marginBottom: '18px' } }, c.rounds + ' rounds  \u00b7  ' + Math.round((c.totalWorkSeconds || 0) / 60) + ' min work'));
+
+    // Optional effort rating: one tap, and dismissible by just tapping done.
+    wrap.appendChild(el('div', { style: { textAlign: 'center', fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-ui)', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '8px' } }, 'effort, optional'));
+    var rpeRow = div({ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '18px' });
+    var picked = { value: null };
+    for (var n = 1; n <= 10; n++) {
+      (function (val) {
+        var b = el('button', {
+          class: 'btn pressable',
+          style: { width: '30px', height: '34px', background: 'var(--bg-inset)', border: '1px solid var(--border-default)', borderRadius: '8px', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'var(--font-data)', fontSize: '13px' },
+          onclick: function () {
+            picked.value = val;
+            Array.prototype.forEach.call(rpeRow.children, function (child, idx) {
+              var on = (idx + 1) === val;
+              child.style.background = on ? 'var(--accent)' : 'var(--bg-inset)';
+              child.style.color = on ? '#001014' : 'var(--text-secondary)';
+              child.style.borderColor = on ? 'var(--accent)' : 'var(--border-default)';
+            });
+          }
+        }, String(val));
+        rpeRow.appendChild(b);
+      })(n);
+    }
+    wrap.appendChild(rpeRow);
+    wrap.appendChild(wmBigButton('done', '#000', WM_PALETTE.prep, function () { condFinish('completed', picked.value); }));
+    return wrap;
+  }
+
+  wrap.appendChild(condHeader(c, t));
+  wrap.appendChild(condProgressBar(c, t));
+
+  if (wmState.phase === 'cond-block') {
+    wrap.appendChild(el('div', { style: { textAlign: 'center', fontFamily: 'var(--font-ui)', fontSize: '20px', fontWeight: '700', color: WM_PALETTE.rest, margin: '20px 0 8px' } }, t.interRoundBlock.label));
+    wrap.appendChild(el('div', { style: { textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'var(--font-ui)', marginBottom: '18px' } }, 'tap done when you are back'));
+    wrap.appendChild(wmBigButton('done', '#001014', WM_PALETTE.go, function () { condAdvance(); }));
+    return wrap;
+  }
+
+  var isWork = wmState.phase === 'cond-work';
+  var isLeadIn = wmState.phase === 'cond-leadin';
+  var unilateral = isWork && condCurrentIsUnilateral();
+
+  var timeEl = condBigNumber('0', isWork ? WM_PALETTE.go : WM_PALETTE.rest);
+  wrap.appendChild(timeEl);
+
+  var label = el('div', {
+    style: { textAlign: 'center', fontFamily: 'var(--font-ui)', fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '6px', lineHeight: '1.15' }
+  }, isLeadIn ? condStationName(0) : (isWork ? condStationName(c.stationIndex) : 'rest'));
+  wrap.appendChild(label);
+
+  var nextIdx = (c.stationIndex >= (t.stations || []).length - 1) ? 0 : c.stationIndex + 1;
+  var nextName = isWork ? condStationName(nextIdx) : condStationName(c.stationIndex);
+  var sub = el('div', {
+    style: { textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-ui)', marginTop: '6px', minHeight: '16px' }
+  }, isLeadIn ? 'get ready' : 'next: ' + nextName);
+  wrap.appendChild(sub);
+
+  wrap.appendChild(condControls(isWork));
+  wrap.appendChild(condRoundControls(c));
+  wrap.appendChild(condMuteToggle());
+
+  var update = function () {
+    if (!wmState || !wmState.cond) return;
+    if (wmState.pausedAt) return;  // paused: freeze the display
+    var endTime = isLeadIn ? wmState.countdownEndTime : (isWork ? wmState.holdEndTime : wmState.restEndTime);
+    if (!endTime) return;
+    var remainMs = endTime - Date.now();
+    var remain = Math.max(0, Math.ceil(remainMs / 1000));
+    timeEl.textContent = String(remain);
+
+    // Unilateral stations split the interval, with a switch cue at the midpoint.
+    if (unilateral) {
+      var half = Math.ceil(c.workSeconds / 2);
+      if (remain <= half) {
+        if (!wmState._condSwitched) {
+          wmState._condSwitched = true;
+          condCueSwitch();
+        }
+        sub.textContent = 'switch side';
+        sub.style.color = WM_PALETTE.warn;
+      } else {
+        sub.textContent = 'first side  \u00b7  next: ' + nextName;
+        sub.style.color = 'var(--text-muted)';
+      }
+    }
+
+    if (remain <= 3 && remain > 0 && !wmState['_condBeep' + wmState.phase + remain]) {
+      wmState['_condBeep' + wmState.phase + remain] = true;
+      condCueTick();
+    }
+    if (remainMs <= 0) {
+      condAdvance();
+    }
+  };
+  update();
+  if (wmTickIntervalId) clearInterval(wmTickIntervalId);
+  wmTickIntervalId = setInterval(update, 200);
+
+  return wrap;
+}
+
+// The whole circuit at a glance: work intervals wide, rest intervals narrow,
+// round breaks marked. Completed segments filled, the current one highlighted.
+function condProgressBar(c, t) {
+  var stations = (t.stations || []).length;
+  var bar = div({ display: 'flex', alignItems: 'stretch', gap: '2px', height: '8px', margin: '4px 0 18px' });
+  for (var r = 1; r <= c.rounds; r++) {
+    for (var s = 0; s < stations; s++) {
+      var isPast = (r < c.round) || (r === c.round && s < c.stationIndex);
+      var isCurrent = (r === c.round && s === c.stationIndex);
+      bar.appendChild(el('div', {
+        style: { flex: '3', borderRadius: '2px', background: isCurrent ? WM_PALETTE.go : (isPast ? 'rgba(106,255,59,0.45)' : 'var(--border-subtle)') }
+      }));
+      if (s < stations - 1) {
+        bar.appendChild(el('div', {
+          style: { flex: '1', borderRadius: '2px', background: isPast ? 'rgba(59,223,255,0.35)' : 'var(--border-subtle)', opacity: '0.7' }
+        }));
+      }
+    }
+    if (r < c.rounds) {
+      bar.appendChild(el('div', {
+        style: { width: '3px', borderRadius: '2px', background: (r < c.round) ? 'var(--accent)' : 'var(--text-muted)', opacity: '0.9' }
+      }));
+    }
+  }
+  return bar;
+}
+
+// Add or remove a round without leaving the circuit.
+function condRoundControls(c) {
+  var row = div({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '10px' });
+  function btn(label, delta) {
+    return el('button', {
+      class: 'btn pressable',
+      style: { background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-control)', color: 'var(--text-muted)', padding: '8px 14px', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '12px' },
+      onclick: function () {
+        var next = c.rounds + delta;
+        // Never drop below the round already in progress.
+        if (next < c.round || next > 8) return;
+        c.rounds = next;
+        wmPersist();
+        wmRender();
+      }
+    }, label);
+  }
+  row.appendChild(btn('\u2212 round', -1));
+  row.appendChild(btn('+ round', 1));
+  return row;
+}
+
+function condMuteToggle() {
+  var muted = condIsMuted();
+  return el('button', {
+    class: 'btn pressable',
+    style: { display: 'block', margin: '12px auto 0', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '12px', padding: '6px 10px' },
+    onclick: function () { condSetMuted(!condIsMuted()); wmRender(); }
+  }, muted ? 'sound off' : 'sound on');
+}
+
+// ─── CONDITIONING CARD (post-session) ────────────────────────────────────────
+// Sits below the workout summary. Skip carries equal weight to start: skipping
+// conditioning is a legitimate training decision and the app treats it as one.
+// No nagging, no streak, no guilt copy. The weekly count is information only.
+
+// Session state for a running conditioning block, held on wmState so it
+// inherits the hardened workout-mode timing: wall-clock end times, wake lock,
+// pause via remaining-duration snapshots, and auto-pause on backgrounding.
+function conditioningRoundsDefault(template) {
+  return (template && template.defaultRounds) ? template.defaultRounds : 2;
+}
+
+function conditioningDurationLabel(template, rounds) {
+  var secs = conditioningEstimatedSeconds(template, rounds);
+  var mins = Math.round(secs / 60);
+  var untimed = template && template.interRoundBlock && !template.interRoundBlock.seconds;
+  return mins + ' min' + (untimed ? ' plus runs' : '');
+}
+
+function wmRenderConditioningCard(day) {
+  if (typeof conditioningSessionType !== 'function') return null;
+  var sessionType = conditioningSessionType(day);
+  if (!sessionType || sessionType === 'rest') return null;
+
+  var state = { template: null, rounds: 2 };
+  var recommended = recommendConditioningTemplate(sessionType);
+  if (recommended) { state.template = recommended; state.rounds = conditioningRoundsDefault(recommended); }
+
+  var card = div({
+    background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
+    borderRadius: 'var(--radius-card)', padding: '20px', marginBottom: '18px'
+  });
+  var host = div({});
+  card.appendChild(host);
+
+  function logAndDismiss(status) {
+    logConditioning({
+      sessionId: 'w' + (wmState && wmState.weekOffset != null ? wmState.weekOffset : 0) + 'd' + (wmState && wmState.dayNum != null ? wmState.dayNum : 0),
+      templateId: state.template ? state.template.id : null,
+      status: status, roundsCompleted: 0,
+      roundsPlanned: state.template ? state.rounds : 0,
+      stationsSkipped: [], totalWorkSeconds: 0
+    });
+    host.innerHTML = '';
+    host.appendChild(el('div', { style: { fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'var(--font-ui)' } }, 'conditioning skipped'));
+    host.appendChild(wmConditioningWeekLine());
+  }
+
+  function render() {
+    host.innerHTML = '';
+    host.appendChild(el('div', {
+      style: { fontSize: '11px', color: 'var(--text-tertiary)', letterSpacing: '0.02em', marginBottom: '6px', fontWeight: '600', fontFamily: 'var(--font-ui)' }
+    }, 'conditioning'));
+
+    // Legs and compression day: no finisher is the correct answer, not a gap.
+    if (!state.template) {
+      host.appendChild(el('div', {
+        style: { fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px', lineHeight: '1.2' }
+      }, 'no finisher today'));
+      host.appendChild(el('div', {
+        style: { fontSize: '13px', color: 'var(--text-secondary)', fontFamily: 'var(--font-ui)', lineHeight: '1.45', marginBottom: '14px' }
+      }, 'conditioning is built from legs and core, and that is what this session trained. anything left over doubles up or reaches into the tissue the other days need.'));
+      var skipPrimary = wmBigButton('skip', '#000', WM_PALETTE.prep, function () { logAndDismiss('declined'); });
+      host.appendChild(skipPrimary);
+      host.appendChild(el('button', {
+        class: 'btn pressable',
+        style: { width: '100%', boxSizing: 'border-box', background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-control)', padding: '12px', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: '600', marginTop: '8px' },
+        onclick: function () { openConditioningPicker(state, render, true); }
+      }, 'run the full session instead'));
+      host.appendChild(wmConditioningWeekLine());
+      return;
+    }
+
+    host.appendChild(el('div', {
+      style: { fontFamily: 'var(--font-ui)', fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.01em', marginBottom: '4px', lineHeight: '1.1' }
+    }, state.template.name.toLowerCase()));
+    host.appendChild(el('div', {
+      style: { fontSize: '12px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-data)', marginBottom: '12px' }
+    }, state.template.workSeconds + 's on / ' + state.template.restSeconds + 's off  \u00b7  ' + conditioningDurationLabel(state.template, state.rounds)));
+
+    // Stations
+    (state.template.stations || []).forEach(function (sid) {
+      var ex = CONDITIONING_EXERCISES[sid];
+      if (!ex) return;
+      host.appendChild(el('div', {
+        style: { fontSize: '13px', color: 'var(--text-secondary)', fontFamily: 'var(--font-ui)', padding: '5px 0', borderBottom: '1px solid var(--border-subtle)' }
+      }, ex.name));
+    });
+    if (state.template.interRoundBlock) {
+      host.appendChild(el('div', {
+        style: { fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-ui)', padding: '6px 0 0' }
+      }, 'between rounds: ' + state.template.interRoundBlock.label));
+    }
+
+    // Rounds stepper
+    var stepper = div({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', margin: '14px 0 12px' });
+    stepper.appendChild(el('span', { style: { fontSize: '13px', color: 'var(--text-secondary)', fontFamily: 'var(--font-ui)' } }, 'rounds'));
+    var ctrls = div({ display: 'flex', alignItems: 'center', gap: '10px' });
+    function stepBtn(lbl, delta) {
+      return el('button', {
+        class: 'btn pressable',
+        style: { background: 'var(--bg-inset)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-control)', color: 'var(--text-primary)', width: '38px', height: '38px', cursor: 'pointer', fontSize: '17px', fontFamily: 'var(--font-ui)' },
+        onclick: function () {
+          state.rounds = Math.max(1, Math.min(6, state.rounds + delta));
+          render();
+        }
+      }, lbl);
+    }
+    ctrls.appendChild(stepBtn('\u2212', -1));
+    ctrls.appendChild(el('span', { style: { fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', fontFamily: 'var(--font-data)', minWidth: '20px', textAlign: 'center' } }, String(state.rounds)));
+    ctrls.appendChild(stepBtn('+', 1));
+    stepper.appendChild(ctrls);
+    host.appendChild(stepper);
+
+    host.appendChild(wmBigButton('start conditioning', '#001014', WM_PALETTE.accent || '#3bdfff', function () {
+      wmStartConditioning(state.template, state.rounds);
+    }));
+    host.appendChild(el('button', {
+      class: 'btn pressable',
+      style: { width: '100%', boxSizing: 'border-box', background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-control)', padding: '12px', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: '600', marginTop: '8px' },
+      onclick: function () { logAndDismiss('declined'); }
+    }, 'skip'));
+    host.appendChild(el('button', {
+      class: 'btn pressable',
+      style: { width: '100%', boxSizing: 'border-box', background: 'transparent', color: 'var(--text-muted)', border: 'none', padding: '10px', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '12px', marginTop: '2px' },
+      onclick: function () { openConditioningPicker(state, render, false); }
+    }, 'choose different'));
+    host.appendChild(wmConditioningWeekLine());
+  }
+
+  render();
+  return card;
+}
+
+// Informational only: no target, no ring to close. The point is to make
+// frequency a visible decision rather than an invisible default.
+function wmConditioningWeekLine() {
+  var n = (typeof conditioningCountThisWeek === 'function') ? conditioningCountThisWeek() : 0;
+  return el('div', {
+    style: { fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-data)', marginTop: '12px' }
+  }, 'conditioning this week: ' + n);
+}
+
+// Template picker. fullOnly is used by the legs and compression day, where the
+// full session is the explicit opt-in rather than a finisher.
+function openConditioningPicker(state, rerender, fullOnly) {
+  var sheet = el('div', {
+    id: 'conditioning-picker-sheet',
+    style: { position: 'fixed', top: '0', left: '0', right: '0', bottom: '0', zIndex: '6200', background: 'rgba(0,0,0,0.75)', opacity: '0', transition: 'opacity 0.22s cubic-bezier(0.32,0.72,0,1)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }
+  });
+  function close() {
+    var inr = sheet.querySelector('[data-sheet-inner]');
+    if (inr) inr.style.transform = 'translateY(100%)';
+    sheet.style.opacity = '0';
+    setTimeout(function () { sheet.remove(); }, 220);
+  }
+  sheet.onclick = function (e) { if (e.target === sheet) close(); };
+  var inner = el('div', {
+    'data-sheet-inner': 'true',
+    style: { background: 'var(--bg-inset)', borderTop: '1px solid var(--border-default)', borderRadius: '20px 20px 0 0', padding: '20px 16px 30px', maxHeight: '80vh', overflowY: 'auto', transform: 'translateY(100%)', transition: 'transform 0.28s cubic-bezier(0.32,0.72,0,1)' }
+  });
+  inner.appendChild(el('div', { style: { fontSize: '11px', color: 'var(--text-tertiary)', letterSpacing: '0.04em', fontWeight: '600', fontFamily: 'var(--font-ui)', textTransform: 'uppercase', marginBottom: '12px' } }, fullOnly ? 'full session' : 'choose conditioning'));
+
+  var list = fullOnly ? conditioningFullSessions() : CONDITIONING_TEMPLATES;
+  list.forEach(function (t) {
+    var isSel = state.template && state.template.id === t.id;
+    var row = el('button', {
+      class: 'btn pressable',
+      style: { width: '100%', boxSizing: 'border-box', textAlign: 'left', background: isSel ? 'var(--bg-card)' : 'transparent', border: '1px solid ' + (isSel ? 'var(--accent)' : 'var(--border-subtle)'), borderRadius: 'var(--radius-control)', padding: '13px 14px', marginBottom: '8px', cursor: 'pointer' },
+      onclick: function (e) {
+        e.stopPropagation();
+        state.template = t;
+        state.rounds = conditioningRoundsDefault(t);
+        close();
+        rerender();
+      }
+    });
+    row.appendChild(el('div', { style: { fontSize: '14px', fontWeight: '700', color: isSel ? 'var(--accent)' : 'var(--text-primary)', fontFamily: 'var(--font-ui)', marginBottom: '3px' } }, t.name.toLowerCase()));
+    row.appendChild(el('div', { style: { fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-data)' } },
+      (t.stations || []).map(function (s) { return (CONDITIONING_EXERCISES[s] || {}).name || s; }).join(' \u00b7 ')));
+    inner.appendChild(row);
+  });
+
+  sheet.appendChild(inner);
+  document.body.appendChild(sheet);
+  requestAnimationFrame(function () { inner.style.transform = 'translateY(0)'; sheet.style.opacity = '1'; });
+}
+
 function wmRenderWorkoutSummary(day) {
   const wrap = div({});
   const card = div({
@@ -11598,6 +12367,14 @@ function wmRenderWorkoutSummary(day) {
     card.appendChild(exRow);
   });
   wrap.appendChild(card);
+
+  // Optional conditioning block. Not a modal and not blocking: it sits below
+  // the summary with skip given equal weight, because skipping is a valid
+  // training decision.
+  try {
+    var condCard = wmRenderConditioningCard(day);
+    if (condCard) wrap.appendChild(condCard);
+  } catch (e) { /* never block the summary on the conditioning card */ }
 
   const finishBtn = wmBigButton('✓ Done', '#000', WM_PALETTE.prep, () => {
     wmFlushToWorkoutStorage();
@@ -41519,6 +42296,15 @@ document.addEventListener('visibilitychange', () => {
   // and capture the time left so resume gives back the same seconds. Hold and
   // rest timers keep running, since that time genuinely passes in the gym.
   if (document.visibilityState === 'hidden') {
+    // Conditioning auto-pauses on interruption (a call or alarm backgrounds the
+    // app), so a circuit is not silently burned through while the user is away.
+    if (typeof wmState !== 'undefined' && wmState && wmState.cond && !wmState.pausedAt &&
+        ['cond-leadin', 'cond-work', 'cond-rest'].indexOf(wmState.phase) >= 0) {
+      wmState.pausedAt = Date.now();
+      wmCaptureRemaining();
+      wmPersist();
+      return;
+    }
     if (typeof wmState !== 'undefined' && wmState && wmState.phase === 'countdown' && !wmState.pausedAt) {
       wmState.pausedAt = Date.now();
       wmCaptureRemaining();
