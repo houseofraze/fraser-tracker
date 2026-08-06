@@ -733,7 +733,7 @@
 //   1. Bump APP_VERSION here
 //   2. Bump CACHE_VERSION in service-worker.js to match
 //   3. mv fraser-final-complete.html index.html; git commit; git push
-const APP_VERSION = '2026.05.19.77';
+const APP_VERSION = '2026.05.19.80';
 
 let activeTab = 'today';
 let activeDay = 0; // will be set to today on init
@@ -5122,6 +5122,37 @@ function renderSwapSheet(originalEx, day, showAllLevels) {
         }, rung.criteria));
       }
 
+      // Diagnostic guidance, collapsed by default. This names what usually
+      // blocks the rung and which qualities fix it, rather than prescribing
+      // extra sets: a rung that lists accessories invites users to stack
+      // volume on top of their programme, which is the real risk here. Rungs
+      // without a limiter show nothing at all.
+      if (rung.limiter && rung.limiter.cause) {
+        const limWrap = div({marginTop:'8px'});
+        const limBody = div({display:'none', paddingTop:'8px'});
+        const limToggle = el('button', {
+          class: 'btn pressable',
+          style: {background:'transparent',border:'none',padding:'2px 0',cursor:'pointer',color:'#b03bff',fontSize:'10px',letterSpacing:'0.06em',fontWeight:'700',textTransform:'uppercase',fontFamily:'var(--font-ui)'},
+          onclick: function (e) {
+            e.stopPropagation();
+            const open = limBody.style.display !== 'none';
+            limBody.style.display = open ? 'none' : 'block';
+            this.textContent = open ? 'stuck here?' : 'stuck here? \u25be';
+          }
+        }, 'stuck here?');
+        limWrap.appendChild(limToggle);
+        limBody.appendChild(el('div', {
+          style: {fontSize:'11px',color:'#aaa',lineHeight:'1.5',marginBottom:'6px'}
+        }, rung.limiter.cause));
+        if (Array.isArray(rung.limiter.fixes) && rung.limiter.fixes.length) {
+          limBody.appendChild(el('div', {
+            style: {fontSize:'10px',color:'#777',lineHeight:'1.5'}
+          }, 'builds it: ' + rung.limiter.fixes.join(', ')));
+        }
+        limWrap.appendChild(limBody);
+        rungCard.appendChild(limWrap);
+      }
+
       body.appendChild(rungCard);
     });
 
@@ -6364,7 +6395,11 @@ const SKILL_PROGRESSIONS = {
           'Hollow body, glutes squeezed, ribs down',
           'Active scapular protraction, push the floor away'
         ],
-        criteria: 'Hold 30 sec x 3 clean sets before advancing to Tuck Planche.'
+        criteria: 'Hold 30 sec x 3 clean sets before advancing to Tuck Planche.',
+        limiter: {
+          cause: 'The lean is limited by wrist tolerance far more often than by shoulder strength, and wrists need their own preparation.',
+          fixes: ['Wrist conditioning', 'Scapular protraction holds']
+        }
       },
       {
         id: 'planche_tuck',
@@ -6380,7 +6415,11 @@ const SKILL_PROGRESSIONS = {
           'Hollow body throughout, never sag',
           'Parallettes are friendlier on wrists than floor'
         ],
-        criteria: 'Hold 15 sec x 3 clean sets before advancing to Advanced Tuck.'
+        criteria: 'Hold 15 sec x 3 clean sets before advancing to Advanced Tuck.',
+        limiter: {
+          cause: 'Losing protraction is the common fault: the shoulder blades collapse together and the shape sinks.',
+          fixes: ['Protracted plank holds', 'Scapular push-ups']
+        }
       },
       {
         id: 'planche_advtuck',
@@ -6578,7 +6617,11 @@ const SKILL_PROGRESSIONS = {
           'Hollow body, ribs down, no sagging hips',
           'Squeeze lats hard, this is a lat exercise first'
         ],
-        criteria: 'Hold 15 sec x 3 clean sets before advancing to Advanced Tuck.'
+        criteria: 'Hold 15 sec x 3 clean sets before advancing to Advanced Tuck.',
+        limiter: {
+          cause: 'Bent arms are the usual fault. The lat has to hold the straight-arm position, and if it cannot, the biceps take over and the shape collapses.',
+          fixes: ['Straight-arm scap pulls', 'Bent-arm to straight-arm holds']
+        }
       },
       {
         id: 'fl_advtuck',
@@ -6594,7 +6637,11 @@ const SKILL_PROGRESSIONS = {
           'Active scapular depression, no shrug',
           'Bigger lever arm than tuck, harder hold'
         ],
-        criteria: 'Hold 12 sec x 3 clean sets before advancing to One-Leg.'
+        criteria: 'Hold 12 sec x 3 clean sets before advancing to One-Leg.',
+        limiter: {
+          cause: 'Hips dropping means the posterior chain is not holding the line. This is a hollow-body fault, not a pulling-strength fault.',
+          fixes: ['Hollow holds', 'Reverse hyperextensions']
+        }
       },
       {
         id: 'fl_oneleg',
@@ -6642,7 +6689,11 @@ const SKILL_PROGRESSIONS = {
           'Point toes, lock knees',
           'Negatives from inverted hang build this rung fastest'
         ],
-        criteria: 'Hold 6 sec x 3 clean sets before adding weight.'
+        criteria: 'Hold 6 sec x 3 clean sets before adding weight.',
+        limiter: {
+          cause: 'At full lever the limiter is almost always straight-arm lat strength through the longest lever. Adding pull-ups will not fix it.',
+          fixes: ['Straight-arm pulldowns', 'Weighted tuck and advanced tuck holds']
+        }
       },
       {
         id: 'fl_weighted',
@@ -6922,7 +6973,11 @@ const SKILL_PROGRESSIONS = {
           'Lean forward as elbows pass, transition is technique not strength',
           'Catch in dip position with chest over bar'
         ],
-        criteria: 'Hit 5 strict reps x 3 sets before adding weight.'
+        criteria: 'Hit 5 strict reps x 3 sets before adding weight.',
+        limiter: {
+          cause: 'Failing the transition is a false grip and elbow-path problem far more than a strength problem.',
+          fixes: ['False grip hangs', 'Transition negatives on rings']
+        }
       },
       {
         id: 'mu_weighted',
@@ -7130,7 +7185,11 @@ const SKILL_PROGRESSIONS = {
           'Counterweight in front (DB at chest) makes balance easier',
           'Drive through whole foot, not just heel'
         ],
-        criteria: 'Hit 6 reps each side x 3 sets before adding weight.'
+        criteria: 'Hit 6 reps each side x 3 sets before adding weight.',
+        limiter: {
+          cause: 'Falling backwards is usually ankle dorsiflexion, not leg strength. The knee has to travel over the toe.',
+          fixes: ['Ankle mobility work', 'Elevated-heel pistols']
+        }
       },
       {
         id: 'pistol_weighted',
@@ -7186,7 +7245,11 @@ const SKILL_PROGRESSIONS = {
           'Arms locked, no bend at elbows',
           'Parallettes are friendlier on wrists'
         ],
-        criteria: 'Hold 25 sec x 3 clean sets before advancing to One-Leg.'
+        criteria: 'Hold 25 sec x 3 clean sets before advancing to One-Leg.',
+        limiter: {
+          cause: 'Tucked holds usually fail on the shoulders, not the abs: if you are not pushing the floor away hard the hips never clear.',
+          fixes: ['Scapular depression drills', 'Support holds on parallettes']
+        }
       },
       {
         id: 'lsit_oneleg',
@@ -7202,7 +7265,11 @@ const SKILL_PROGRESSIONS = {
           'Train both sides, switch each set',
           'Hip flexor strength is often the bottleneck'
         ],
-        criteria: 'Hold 20 sec each side x 3 clean sets before advancing.'
+        criteria: 'Hold 20 sec each side x 3 clean sets before advancing.',
+        limiter: {
+          cause: 'One leg out exposes the compression side. The extended leg drops because the hip flexor cannot hold it, not because the core is weak in general.',
+          fixes: ['Seated compression lifts', 'Alternating leg raises']
+        }
       },
       {
         id: 'lsit_full',
@@ -7218,7 +7285,11 @@ const SKILL_PROGRESSIONS = {
           'Hamstring flexibility matters here',
           'Posterior pelvic tilt locks the position'
         ],
-        criteria: 'Hold 15 sec x 3 clean sets before advancing to Advanced.'
+        criteria: 'Hold 15 sec x 3 clean sets before advancing to Advanced.',
+        limiter: {
+          cause: 'Legs sinking below parallel is compression range. Hamstring tightness pulls the legs down as much as weak hip flexors do.',
+          fixes: ['Seated compression lifts', 'Standing pike compression', 'Hamstring work']
+        }
       },
       {
         id: 'lsit_advanced',
@@ -7378,7 +7449,11 @@ const SKILL_PROGRESSIONS = {
           'Slow eccentric is where strength builds',
           'Bruce Lee was famous for this'
         ],
-        criteria: 'Hit 8 reps x 3 clean sets before adding weight.'
+        criteria: 'Hit 8 reps x 3 clean sets before adding weight.',
+        limiter: {
+          cause: 'The break happens at the hips: the lower back arches because anti-extension strength runs out at full length.',
+          fixes: ['Hollow holds', 'Negative dragon flags']
+        }
       },
       {
         id: 'dflag_weighted',
@@ -7482,7 +7557,11 @@ const SKILL_PROGRESSIONS = {
           'Stack hips over shoulders over wrists',
           'Practice daily for fastest progress'
         ],
-        criteria: 'Hold 30 sec x 3 clean sets before pushing for extended.'
+        criteria: 'Hold 30 sec x 3 clean sets before pushing for extended.',
+        limiter: {
+          cause: 'Most people plateau here on wrist and finger control, not shoulder strength. Balance is corrected at the hands.',
+          fixes: ['Wrist conditioning', 'Chest-to-wall holds for line']
+        }
       },
       {
         id: 'hs_freeext',
@@ -7498,7 +7577,159 @@ const SKILL_PROGRESSIONS = {
           'Wrist conditioning is critical at this volume',
           'Daily practice, multiple short sessions beats one long one'
         ],
-        criteria: 'Hold 60 sec x 3 clean sets. Press handstand next.'
+        criteria: 'Hold 60 sec x 3 clean sets. Press handstand next.',
+        limiter: {
+          cause: 'Long holds are limited by line efficiency. A stacked handstand costs far less energy than a banana-shaped one.',
+          fixes: ['Chest-to-wall holds', 'Hollow holds']
+        }
+      }
+    ]
+  },
+
+  press_handstand: {
+    skillId: 'press_handstand',
+    label: 'Press to Handstand',
+    description: 'Pressing from the floor into a handstand with control, no jump.',
+    rungs: [
+      {
+        id: 'ph_compression',
+        name: 'Seated Compression Lifts',
+        sets: 4, reps: '8-10',
+        tempo: '2-1-2',
+        tempoDesc: 'Seated, legs straight in front, lift both heels off the floor and hold.',
+        category: 'Park/Home',
+        primaryMuscles: ['hip flexors', 'core', 'quads'],
+        cues: [
+          'Push the floor away with straight arms to lift taller',
+          'Legs stay locked, toes pointed',
+          'Lift from the hip flexors, not by leaning back',
+          'This is the base the whole press is built on'
+        ],
+        criteria: 'Heels clear the floor for 5 sec x 4 sets with legs locked.',
+        limiter: {
+          cause: 'Almost nobody fails the press on shoulder strength. They fail because the hips will not close far enough to get the weight over the hands.',
+          fixes: ['Seated compression lifts', 'Pike compressions against a wall', 'L-sit holds']
+        }
+      },
+      {
+        id: 'ph_pikecompress',
+        name: 'Standing Pike Compression',
+        sets: 4, reps: '8-10',
+        tempo: '2-2-2',
+        tempoDesc: 'Standing folded, hands on floor, pull the chest to the thighs actively.',
+        category: 'Park/Home',
+        primaryMuscles: ['hip flexors', 'hamstrings', 'core'],
+        cues: [
+          'Pull yourself into the fold, do not just hang there',
+          'Hamstring flexibility and active compression are different qualities',
+          'Keep the knees straight, bend from the hip',
+          'Work the range you can hold, not the range you can reach'
+        ],
+        criteria: 'Hold a closed pike, chest on thighs, 10 sec x 4 without hands pulling.',
+        limiter: {
+          cause: 'Passive flexibility gets you into the fold; you need active strength to hold it there while your feet leave the ground.',
+          fixes: ['Seated compression lifts', 'Pike pulses at end range']
+        }
+      },
+      {
+        id: 'ph_elevated',
+        name: 'Elevated Pike Press',
+        sets: 4, reps: '4-6',
+        tempo: '3-1-3',
+        tempoDesc: 'Feet on a box, press hips over shoulders and lift to handstand.',
+        category: 'Park/Home',
+        primaryMuscles: ['shoulders', 'core', 'hip flexors'],
+        cues: [
+          'Shift the shoulders forward past the hands first, then lift',
+          'Raise the hips before the feet leave the box',
+          'Straight arms throughout, no bend to muscle it up',
+          'Lower the box height as you get stronger'
+        ],
+        criteria: 'Press from a knee-height box 5 times with straight arms and no jump.',
+        limiter: {
+          cause: 'If you stall here it is usually the shoulder lean, not strength: the weight has to travel over the hands before the feet can leave.',
+          fixes: ['Wall shoulder leans', 'Elevated pike holds at the lean point']
+        }
+      },
+      {
+        id: 'ph_negative',
+        name: 'Press Negative',
+        sets: 4, reps: '3-5',
+        tempo: '5-0-0',
+        tempoDesc: 'From a handstand, lower slowly to a straddle or pike with straight arms.',
+        category: 'Park/Home',
+        primaryMuscles: ['shoulders', 'core', 'hip flexors'],
+        cues: [
+          'Lower slower than feels necessary, this is where the strength is built',
+          'Keep the arms locked, resist the fold the whole way',
+          'Stop the descent under control, do not collapse at the end',
+          'The negative teaches the exact path the press follows'
+        ],
+        criteria: 'Lower under control for 5 sec x 5 reps without the arms bending.',
+        limiter: {
+          cause: 'Collapsing at the bottom means the compression is not strong enough to control the last third of the range.',
+          fixes: ['Seated compression lifts', 'Straddle compression holds']
+        }
+      },
+      {
+        id: 'ph_tuck',
+        name: 'Tuck Press',
+        sets: 4, reps: '3-5',
+        tempo: '3-1-3',
+        tempoDesc: 'From a tucked position on the floor, press to handstand with straight arms.',
+        category: 'Park/Home',
+        primaryMuscles: ['shoulders', 'core', 'hip flexors'],
+        cues: [
+          'Tuck tight, knees to chest, before the hips rise',
+          'Lean until the feet feel weightless, then lift',
+          'Extend the legs only once the hips are stacked',
+          'No jump, no arm bend'
+        ],
+        criteria: 'Press from tuck to handstand 5 times with straight arms and no jump.',
+        limiter: {
+          cause: 'Jumping into it means the lean is coming too late. The feet should feel light before you try to lift them.',
+          fixes: ['Elevated pike press', 'Wall shoulder leans']
+        }
+      },
+      {
+        id: 'ph_straddle',
+        name: 'Straddle Press',
+        sets: 4, reps: '3-5',
+        tempo: '3-1-3',
+        tempoDesc: 'Press to handstand from a straddle, legs wide and straight.',
+        category: 'Park/Home',
+        primaryMuscles: ['shoulders', 'core', 'hip flexors', 'adductors'],
+        cues: [
+          'Straddle wide, it shortens the lever and makes the press easier',
+          'Straight legs from the first moment',
+          'Hips lead, feet follow',
+          'Close the straddle only at the top'
+        ],
+        criteria: 'Press from straddle 5 times, straight legs, straight arms, no jump.',
+        limiter: {
+          cause: 'A narrow straddle makes the lever long. Width is doing real work here, so open it further before assuming you lack strength.',
+          fixes: ['Straddle compression holds', 'Adductor and pancake work']
+        }
+      },
+      {
+        id: 'ph_pike',
+        name: 'Pike Press',
+        sets: 4, reps: '2-4',
+        tempo: '3-1-3',
+        tempoDesc: 'Full press to handstand from a closed pike, legs together and straight.',
+        category: 'Park/Home',
+        primaryMuscles: ['shoulders', 'core', 'hip flexors'],
+        cues: [
+          'Legs together the whole way, this is the hardest lever',
+          'Shoulders travel forward early and stay there',
+          'Slow is strong, do not rush the middle',
+          'Every rep should look the same'
+        ],
+        criteria: 'Press from a closed pike 3 times with straight legs and arms.',
+        limiter: {
+          cause: 'The closed pike is the longest lever in the progression. If straddle presses are clean and this is not, it is compression range, not strength.',
+          fixes: ['Seated compression lifts', 'Standing pike compression']
+        }
       }
     ]
   },
@@ -16519,15 +16750,17 @@ function renderWaterCompactCard() {
   hdr.appendChild(hdrLeft);
   hdr.appendChild(el('span', { style: { color: '#444', fontSize: '16px' } }, '\u203a'));
   card.appendChild(hdr);
-  // Quick-add row
-  var quickRow = el('div', { style: { display: 'flex', gap: '6px', marginTop: '10px' } });
+  // Quick-add row. Buttons meet the 44px minimum touch target both Apple and
+  // Google specify; the previous 8px padding at 10px type came out around 26px,
+  // which is under the threshold and a common source of mis-taps.
+  var quickRow = el('div', { style: { display: 'flex', gap: '8px', marginTop: '12px' } });
   [250, 500, 750, 1000].forEach(function (ml) {
     var btn = el('button', {
-      class: 'btn',
+      class: 'btn pressable',
       style: {
-        flex: '1', padding: '8px 0', background: 'var(--bg-card)',
-        color: '#bbb', border: '1px solid var(--border-default)', borderRadius: '6px',
-        fontFamily: "'DM Mono', monospace", fontSize: '10px', cursor: 'pointer',
+        flex: '1', minHeight: '44px', padding: '12px 0', background: 'var(--bg-card)',
+        color: '#ccc', border: '1px solid var(--border-default)', borderRadius: '8px',
+        fontFamily: "'DM Mono', monospace", fontSize: '12px', cursor: 'pointer',
         letterSpacing: '0.04em'
       },
       onclick: function (e) {
@@ -20036,6 +20269,78 @@ function setTrainSegment(seg) {
 // Fuel segment state (Stage 3 Slice 2), mirroring the Train pattern. Today is
 // the daily loop; Plan holds the planning surfaces. Resets to 'today' on Fuel
 // entry (see setTab).
+// ─── UI MODE: BASIC AND PRO ──────────────────────────────────────────────────
+// Testers report the app as overwhelming. Rather than removing anything, the
+// interface has two densities. Basic shows the workout plan, today's meals and
+// the calorie goal, and simple body metrics. Pro adds every secondary tracker,
+// planner and analytic. Nothing is deleted in Basic, only hidden, and the
+// switch is one tap in Settings and fully reversible.
+//
+// Mode is a display preference and is deliberately NOT the premium tier: paid
+// features stay gated by isPremium() independently. Monetise capability, not
+// visibility, or new users never see what they would be paying for.
+//
+// Implemented as a registry rather than forked render paths. Each surface
+// declares a tier in one place, so adding a feature later means adding one line
+// here rather than branching every screen and testing it twice.
+const FLOW_MODE_KEY = 'flow.ui.mode';
+const FLOW_MODE_NOTICE_KEY = 'flow.ui.mode.noticeSeen';
+
+const FLOW_SURFACES = {
+  // Fuel, Today
+  consumedSummary:   { tier: 'basic', label: 'Calories consumed' },
+  mealList:          { tier: 'basic', label: "Today's meals" },
+  manualFoodLog:     { tier: 'pro',   label: 'Manual food log' },
+  waterTracker:      { tier: 'pro',   label: 'Water tracker' },
+  stepTracker:       { tier: 'pro',   label: 'Step tracker' },
+  macroGrid:         { tier: 'pro',   label: 'Planned macro grid' },
+  mealProgress:      { tier: 'pro',   label: 'Meal progress bar' },
+  // Fuel, Plan segment
+  planSegment:       { tier: 'pro',   label: 'Week plan segment' },
+  shoppingList:      { tier: 'pro',   label: 'Shopping list' },
+  mealPrep:          { tier: 'pro',   label: 'Meal prep' },
+  weekLock:          { tier: 'pro',   label: 'Week lock' },
+  // Body
+  bodyOverview:      { tier: 'basic', label: 'Body metrics' },
+  // The Body tab stays basic for now. Its summary section holds the streak,
+  // the skill ladders and personal records, which are core motivation rather
+  // than analytics, and the ladders in particular are meant to be visible to
+  // everyone. Splitting genuinely secondary analytics out of it needs a closer
+  // look at that section than a tier label can express.
+  progressSummary:   { tier: 'basic', label: 'Streak, skills and PRs' }
+  // Train is intentionally absent: the whole tab is basic in both modes.
+};
+
+function getUIMode() {
+  try {
+    var m = localStorage.getItem(FLOW_MODE_KEY);
+    if (m === 'basic' || m === 'pro') return m;
+  } catch (e) {}
+  return 'basic';  // new users land in the simple view
+}
+
+function setUIMode(mode) {
+  try { localStorage.setItem(FLOW_MODE_KEY, mode === 'pro' ? 'pro' : 'basic'); } catch (e) {}
+}
+
+function isProMode() { return getUIMode() === 'pro'; }
+
+// True when a surface should render in the current mode. Unknown ids default to
+// visible, so a surface can never disappear by being forgotten in the registry.
+function surfaceVisible(id) {
+  var s = FLOW_SURFACES[id];
+  if (!s) return true;
+  return s.tier === 'basic' || isProMode();
+}
+
+function flowModeNoticeSeen() {
+  try { return localStorage.getItem(FLOW_MODE_NOTICE_KEY) === '1'; } catch (e) { return false; }
+}
+
+function markFlowModeNoticeSeen() {
+  try { localStorage.setItem(FLOW_MODE_NOTICE_KEY, '1'); } catch (e) {}
+}
+
 let _fuelSegment = 'today';
 
 function setFuelSegment(seg) {
@@ -33805,6 +34110,43 @@ function renderWorkoutSection() {
 
 function renderDisplaySection() {
   const wrap = div({});
+
+  // ── Interface mode: Basic or Pro ──
+  // A display preference, not a paywall. Paid features stay gated separately.
+  const modeCard = div({
+    background:'var(--bg-card)', border:'1px solid var(--border-subtle)',
+    borderRadius:'10px', padding:'14px 16px', marginBottom:'14px'
+  });
+  modeCard.appendChild(el('div', {style:{fontSize:'8px',color:'#3bdfff',letterSpacing:'0.25em',textTransform:'uppercase',fontWeight:'700',marginBottom:'4px'}}, '\u25d0 Interface'));
+  modeCard.appendChild(el('div', {style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:'18px',color:'var(--text-primary)',letterSpacing:'0.04em',marginBottom:'6px'}}, 'How much do you want to see?'));
+  modeCard.appendChild(el('div', {style:{fontSize:'11px',color:'var(--text-muted)',lineHeight:'1.5',marginBottom:'12px'}},
+    'Basic keeps your workouts, meals and calorie goal. Pro adds the trackers, planner and analytics. Nothing is deleted either way and you can switch back any time.'));
+
+  const modeRow = div({display:'flex', gap:'8px'});
+  [['basic', 'Basic', 'workouts, meals, calories'], ['pro', 'Pro', 'everything']].forEach(function (opt) {
+    const active = getUIMode() === opt[0];
+    const b = el('button', {
+      class: 'btn pressable',
+      style: {
+        flex:'1', minHeight:'56px', padding:'10px 12px', cursor:'pointer', textAlign:'left',
+        background: active ? 'var(--bg-card-nested)' : 'transparent',
+        border: '1px solid ' + (active ? 'var(--accent)' : 'var(--border-default)'),
+        borderRadius: 'var(--radius-control)'
+      },
+      onclick: function () {
+        setUIMode(opt[0]);
+        markFlowModeNoticeSeen();
+        try { if (typeof renderNutrition === 'function') renderNutrition(); } catch (e) {}
+        try { if (typeof openSettings === 'function') openSettings('menu'); } catch (e) {}
+      }
+    });
+    b.appendChild(el('div', {style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:'16px',letterSpacing:'0.04em',color: active ? 'var(--accent)' : 'var(--text-primary)'}}, opt[1]));
+    b.appendChild(el('div', {style:{fontSize:'10px',color:'var(--text-muted)',marginTop:'2px'}}, opt[2]));
+    modeRow.appendChild(b);
+  });
+  modeCard.appendChild(modeRow);
+  wrap.appendChild(modeCard);
+
   const currentId = getTextScale();
 
   // Intro / context card
@@ -36754,13 +37096,20 @@ function renderNutrition() {
   // Slice 1 renderSegmentedControl. Today is the daily loop; Plan holds the
   // planning surfaces. Each surface below is gated to its segment so nothing
   // physically moves, it just renders in the right tab.
-  list.appendChild(renderSegmentedControl(
-    [{ key: 'today', label: 'Today' }, { key: 'plan', label: 'Plan' }],
-    _fuelSegment,
-    setFuelSegment
-  ));
-  var _fT = _fuelSegment === 'today';
-  var _fP = _fuelSegment === 'plan';
+  // In Basic mode the Plan segment and its planning surfaces are hidden, so the
+  // control itself would be a single dead tab. Force Today and skip rendering
+  // the control entirely rather than showing a switch that does nothing.
+  if (!surfaceVisible('planSegment')) {
+    if (_fuelSegment !== 'today') setFuelSegment('today');
+  } else {
+    list.appendChild(renderSegmentedControl(
+      [{ key: 'today', label: 'Today' }, { key: 'plan', label: 'Plan' }],
+      _fuelSegment,
+      setFuelSegment
+    ));
+  }
+  var _fT = surfaceVisible('planSegment') ? (_fuelSegment === 'today') : true;
+  var _fP = surfaceVisible('planSegment') && (_fuelSegment === 'plan');
 
   // Consumed-vs-target summary (Stage 3 Slice 1): the day's running total at
   // the very top of Fuel, so the daily status leads. Sums checked meals plus
@@ -36768,7 +37117,7 @@ function renderNutrition() {
   if (_fT) { try { list.appendChild(renderConsumedSummaryCard()); } catch (e) { /* non-fatal */ } }
 
   // Manual food log (Stage 2 Slice 3): the quick off-plan food entry. [Today]
-  if (_fT) { try { list.appendChild(renderManualFoodCard()); } catch (e) { /* non-fatal */ } }
+  if (_fT && surfaceVisible('manualFoodLog')) { try { list.appendChild(renderManualFoodCard()); } catch (e) { /* non-fatal */ } }
 
   // Meal Templates entry construction removed (purge): the node was built on
   // every Fuel render but never appended since the Stage 3 Slice 4 browser
@@ -36803,13 +37152,39 @@ function renderNutrition() {
   // M3: Week-lock entry. Sits below Origin Lunches. Hidden when there are
   // no Origin selections and no existing lock. Renders the lock state, the
   // count of locked/planned days, and a Lock/Unlock action. [Plan]
-  if (_fP) { try { list.appendChild(renderWeekLockEntry()); } catch (e) { /* non-fatal */ } }
+  if (_fP && surfaceVisible('weekLock')) { try { list.appendChild(renderWeekLockEntry()); } catch (e) { /* non-fatal */ } }
 
   // Reorganisation R1: water + shopping live on Fuel now. Water is a daily
   // action [Today]; shopping is a planning action [Plan].
-  if (_fT) { try { list.appendChild(renderWaterCompactCard()); } catch (e) { /* non-fatal */ } }
-  if (_fT) { try { list.appendChild(renderStepCompactCard()); } catch (e) { /* non-fatal */ } }
-  if (_fP) { try { list.appendChild(renderShoppingListEntry()); } catch (e) { /* non-fatal */ } }
+  // Water and steps share one card rather than stacking two. They are the same
+  // kind of thing (a simple daily target with a ring), and two sets of card
+  // chrome cost a border, padding and margin each for no added meaning. This is
+  // the first of the density changes: same functions, fewer boundaries before
+  // the user reaches their meals.
+  if (_fT && (surfaceVisible('waterTracker') || surfaceVisible('stepTracker'))) {
+    try {
+      var trackerCard = el('div', { style: {
+        background: 'var(--bg-card-nested)', border: '1px solid var(--border-default)',
+        borderRadius: 'var(--radius-card)', padding: '4px 12px', marginBottom: '12px'
+      } });
+      var w = renderWaterCompactCard();
+      var s = renderStepCompactCard();
+      // Strip the nested chrome so the shared card provides it once.
+      [w, s].forEach(function (n) {
+        if (!n) return;
+        n.style.background = 'transparent';
+        n.style.border = 'none';
+        n.style.borderRadius = '0';
+        n.style.padding = '10px 2px';
+        n.style.marginBottom = '0';
+      });
+      if (w) trackerCard.appendChild(w);
+      if (w && s) trackerCard.appendChild(el('div', { style: { height: '1px', background: 'var(--border-subtle)' } }));
+      if (s) trackerCard.appendChild(s);
+      list.appendChild(trackerCard);
+    } catch (e) { /* non-fatal */ }
+  }
+  if (_fP && surfaceVisible('shoppingList')) { try { list.appendChild(renderShoppingListEntry()); } catch (e) { /* non-fatal */ } }
 
   // ── DAILY CALORIE TARGET CARD ── [Today]
   // Shows the calculated target for TODAY (day-type-specific) or the weekly
@@ -37252,7 +37627,7 @@ function renderNutrition() {
     }
     macroGrid.appendChild(cell);
   });
-  if (_fT) list.appendChild(macroGrid);  // [Today] planned vs target macro grid
+  if (_fT && surfaceVisible('macroGrid')) list.appendChild(macroGrid);  // [Today] planned vs target macro grid
 
   // Locked-plan banner — confirms the user is seeing actual locked numbers
   if (lockedMacros && _fT) {
@@ -37294,13 +37669,13 @@ function renderNutrition() {
   dotsWrap.appendChild(dots);
   dotsWrap.appendChild(bebas(16,checked===activeMealCount?'#6aff3b':np.color,checked + '/' + activeMealCount));
   prog.appendChild(dotsWrap);
-  if (_fT) list.appendChild(prog);  // [Today] day's meal progress
+  if (_fT && surfaceVisible('mealProgress')) list.appendChild(prog);  // [Today] day's meal progress
 
   // Week plan lock banner. [Plan]
-  if (_fP) list.appendChild(renderWeekPlanLockBanner());
+  if (_fP && surfaceVisible('weekLock')) list.appendChild(renderWeekPlanLockBanner());
 
   // Meal Prep section. [Plan]
-  if (_fP) list.appendChild(renderMealPrepSection());
+  if (_fP && surfaceVisible('mealPrep')) list.appendChild(renderMealPrepSection());
 
   // ── BEST-FIT-OF-DAY (Upgrade.A) ─────────────────────────────────────
   // For each day, find the single meal that lands closest to its slot's
